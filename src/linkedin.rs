@@ -1,12 +1,14 @@
-use std::collections::HashMap;
 use serde_json::{json, Value};
+use std::collections::HashMap;
 use urlencoding::encode;
 
 use crate::client::Client;
 use crate::error::LinkedinError;
 use crate::utils::get_id_from_urn;
 use crate::{
-    Company, Connection, ContactInfo, Conversation, ConversationDetails, Education, Experience, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, SearchPeopleParams, Skill, UniformResourceName
+    Company, Connection, ContactInfo, Conversation, ConversationDetails, Education, Experience,
+    Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School,
+    SearchPeopleParams, Skill, UniformResourceName,
 };
 
 const MAX_UPDATE_COUNT: usize = 100;
@@ -26,102 +28,141 @@ impl LinkedinInner {
     }
 
     pub async fn get_profile(
-    &self,
-    public_id: Option<&str>,
-    urn: Option<&UniformResourceName>
-) -> Result<Profile, LinkedinError> {
-    let id = if let Some(pid) = public_id {
-        pid.to_string()
-    } else if let Some(urn) = urn {
-        urn.id.clone()  
-    } else {
-        return Err(LinkedinError::InvalidInput("public_id or uniform_resource_name required".into()));
-    };
+        &self,
+        public_id: Option<&str>,
+        urn: Option<&UniformResourceName>,
+    ) -> Result<Profile, LinkedinError> {
+        let id = if let Some(pid) = public_id {
+            pid.to_string()
+        } else if let Some(urn) = urn {
+            urn.id.clone()
+        } else {
+            return Err(LinkedinError::InvalidInput(
+                "public_id or uniform_resource_name required".into(),
+            ));
+        };
 
-    let res = self.client.get(&format!("/identity/profiles/{}/profileView", id)).await?;
-    if res.status() != 200 {
-        return Err(LinkedinError::RequestFailed(format!("status {}", res.status())));
-    }
-
-    let data: serde_json::Value = res.json().await?;
-    let profile_val = data.get("profile")
-        .ok_or_else(|| LinkedinError::RequestFailed("No 'profile' key".into()))?
-        .clone();
-
-    let mut profile: Profile = serde_json::from_value(profile_val)?;
-    
-    // Derive helper fields not serialized directly
-    if let Some(mini) = &profile.mini_profile {
-        if let Some(urn_str) = mini.entity_urn.as_deref() {
-            if let Ok(urn) = UniformResourceName::parse(urn_str) {
-                profile.profile_id = urn.id;
-            }
-        }
-    }
-
-    // Fill in profile_id
-    if let Some(mini) = &profile.mini_profile {
-                if let Some(urn_str) = mini.entity_urn.as_deref() {
-            if let Ok(urn) = UniformResourceName::parse(urn_str) {
-                profile.profile_id = urn.id;
-            }
+        let res = self
+            .client
+            .get(&format!("/identity/profiles/{}/profileView", id))
+            .await?;
+        if res.status() != 200 {
+            return Err(LinkedinError::RequestFailed(format!(
+                "status {}",
+                res.status()
+            )));
         }
 
-}
+        let data: serde_json::Value = res.json().await?;
+        let profile_val = data
+            .get("profile")
+            .ok_or_else(|| LinkedinError::RequestFailed("No 'profile' key".into()))?
+            .clone();
 
-// fill in experience
- if let Some(positions) = data.get("positionView").and_then(|v| v.get("elements")) {
-        let exps: Vec<Experience> = serde_json::from_value(positions.clone())?;
-        profile.experience = exps;
+        let mut profile: Profile = serde_json::from_value(profile_val)?;
+
+        // Derive helper fields not serialized directly
+        if let Some(mini) = &profile.mini_profile {
+            if let Some(urn_str) = mini.entity_urn.as_deref() {
+                if let Ok(urn) = UniformResourceName::parse(urn_str) {
+                    profile.profile_id = urn.id;
+                }
+            }
+        }
+
+        // Fill in profile_id
+        if let Some(mini) = &profile.mini_profile {
+            if let Some(urn_str) = mini.entity_urn.as_deref() {
+                if let Ok(urn) = UniformResourceName::parse(urn_str) {
+                    profile.profile_id = urn.id;
+                }
+            }
+        }
+
+        // fill in experience
+        if let Some(positions) = data.get("positionView").and_then(|v| v.get("elements")) {
+            let exps: Vec<Experience> = serde_json::from_value(positions.clone())?;
+            profile.experience = exps;
+        }
+
+        // fill in education
+        if let Some(eds) = data.get("educationView").and_then(|v| v.get("elements")) {
+            let eds: Vec<Education> = serde_json::from_value(eds.clone())?;
+            profile.education = eds;
+        }
+
+        // Fill in skills (separate endpoint)
+        profile.skills = self.get_profile_skills(public_id, urn).await?;
+
+        Ok(profile)
     }
 
-    // fill in education
-    if let Some(eds) = data.get("educationView").and_then(|v| v.get("elements")) {
-        let eds: Vec<Education> = serde_json::from_value(eds.clone())?;
-        profile.education = eds;
-    }
+    pub async fn get_profile_contact_info(
+        &self,
+        public_id: Option<&str>,
+        uniform_resource_name: Option<&str>,
+    ) -> Result<ContactInfo, LinkedinError> {
+        let id = public_id.or(uniform_resource_name).ok_or_else(|| {
+            LinkedinError::InvalidInput(
+                "Either public_id or uniform_resource_name must be provided".to_string(),
+            )
+        })?;
 
-    // Fill in skills (separate endpoint)
-    profile.skills = self.get_profile_skills(public_id, urn).await?;
-
-    Ok(profile)
-}
-
-    pub async fn get_profile_contact_info(&self, public_id: Option<&str>, uniform_resource_name: Option<&str>) -> Result<ContactInfo, LinkedinError> {
-        let id = public_id.or(uniform_resource_name).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or uniform_resource_name must be provided".to_string()))?;
-        
-        let res = self.client.get(&format!("/identity/profiles/{}/profileContactInfo", id)).await?;
+        let res = self
+            .client
+            .get(&format!("/identity/profiles/{}/profileContactInfo", id))
+            .await?;
         let data: Value = res.json().await?;
-        
+
         let mut contact_info = ContactInfo {
-            email_address: data.get("emailAddress").and_then(|e| e.as_str()).map(|s| s.to_string()),
+            email_address: data
+                .get("emailAddress")
+                .and_then(|e| e.as_str())
+                .map(|s| s.to_string()),
             websites: vec![],
             twitter: vec![],
             phone_numbers: vec![],
-            birthdate: data.get("birthDateOn").and_then(|b| b.as_str()).map(|s| s.to_string()),
+            birthdate: data
+                .get("birthDateOn")
+                .and_then(|b| b.as_str())
+                .map(|s| s.to_string()),
             ims: data.get("ims").map(|i| vec![i.clone()]),
         };
-        
+
         // Parse websites
         if let Some(websites) = data.get("websites").and_then(|w| w.as_array()) {
             for website in websites {
                 let mut site = crate::Website {
-                    url: website.get("url").and_then(|u| u.as_str()).unwrap_or("").to_string(),
+                    url: website
+                        .get("url")
+                        .and_then(|u| u.as_str())
+                        .unwrap_or("")
+                        .to_string(),
                     label: None,
                 };
-                
+
                 if let Some(website_type) = website.get("type") {
-                    if let Some(standard) = website_type.get("com.linkedin.voyager.identity.profile.StandardWebsite") {
-                        site.label = standard.get("category").and_then(|c| c.as_str()).map(|s| s.to_string());
-                    } else if let Some(custom) = website_type.get("com.linkedin.voyager.identity.profile.CustomWebsite") {
-                        site.label = custom.get("label").and_then(|l| l.as_str()).map(|s| s.to_string());
+                    if let Some(standard) =
+                        website_type.get("com.linkedin.voyager.identity.profile.StandardWebsite")
+                    {
+                        site.label = standard
+                            .get("category")
+                            .and_then(|c| c.as_str())
+                            .map(|s| s.to_string());
+                    } else if let Some(custom) =
+                        website_type.get("com.linkedin.voyager.identity.profile.CustomWebsite")
+                    {
+                        site.label = custom
+                            .get("label")
+                            .and_then(|l| l.as_str())
+                            .map(|s| s.to_string());
                     }
                 }
-                
+
                 contact_info.websites.push(site);
             }
         }
-        
+
         // Parse Twitter handles
         if let Some(twitter_handles) = data.get("twitterHandles").and_then(|t| t.as_array()) {
             for handle in twitter_handles {
@@ -130,7 +171,7 @@ impl LinkedinInner {
                 }
             }
         }
-        
+
         // Parse phone numbers
         if let Some(phone_numbers) = data.get("phoneNumbers").and_then(|p| p.as_array()) {
             for phone in phone_numbers {
@@ -139,26 +180,36 @@ impl LinkedinInner {
                 }
             }
         }
-        
+
         Ok(contact_info)
     }
 
-    pub async fn get_profile_skills(&self, public_id: Option<&str>, uniform_resource_name: Option<&UniformResourceName>) -> Result<Vec<Skill>, LinkedinError> {
+    pub async fn get_profile_skills(
+        &self,
+        public_id: Option<&str>,
+        uniform_resource_name: Option<&UniformResourceName>,
+    ) -> Result<Vec<Skill>, LinkedinError> {
         let id = if let Some(pid) = public_id {
-    pid.to_string()                // use raw string
-} else if let Some(urn) = uniform_resource_name {
-    urn.id.clone()                 // use strong type's .id
-} else {
-    return Err(LinkedinError::InvalidInput(
-        "Either public_id or uniform_resource_name must be provided".into()
-    ));
-};
-        
-        let res = self.client.get(&format!("/identity/profiles/{}/skills?count=100&start=0", id)).await?;
+            pid.to_string() // use raw string
+        } else if let Some(urn) = uniform_resource_name {
+            urn.id.clone() // use strong type's .id
+        } else {
+            return Err(LinkedinError::InvalidInput(
+                "Either public_id or uniform_resource_name must be provided".into(),
+            ));
+        };
+
+        let res = self
+            .client
+            .get(&format!(
+                "/identity/profiles/{}/skills?count=100&start=0",
+                id
+            ))
+            .await?;
         let data: Value = res.json().await?;
-        
+
         let mut skills = vec![];
-        
+
         if let Some(elements) = data.get("elements").and_then(|e| e.as_array()) {
             for element in elements {
                 if let Some(name) = element.get("name").and_then(|n| n.as_str()) {
@@ -168,29 +219,39 @@ impl LinkedinInner {
                 }
             }
         }
-        
+
         Ok(skills)
     }
 
-    pub async fn get_profile_connections(&self, uniform_resource_name: &str) -> Result<Vec<Connection>, LinkedinError> {
+    pub async fn get_profile_connections(
+        &self,
+        uniform_resource_name: &str,
+    ) -> Result<Vec<Connection>, LinkedinError> {
         let params = SearchPeopleParams {
             connection_of: Some(uniform_resource_name.to_string()),
             network_depth: Some("F".to_string()),
             ..Default::default()
         };
-        
+
         let results = self.search_people(params).await?;
-        
-        Ok(results.into_iter().map(|r| Connection {
-            urn_id: r.urn_id,
-            public_id: r.public_id,
-            distance: r.distance,
-        }).collect())
+
+        Ok(results
+            .into_iter()
+            .map(|r| Connection {
+                urn_id: r.urn_id,
+                public_id: r.public_id,
+                distance: r.distance,
+            })
+            .collect())
     }
 
-    pub async fn search(&self, mut params: HashMap<String, String>, limit: Option<usize>) -> Result<Vec<Value>, LinkedinError> {
+    pub async fn search(
+        &self,
+        mut params: HashMap<String, String>,
+        limit: Option<usize>,
+    ) -> Result<Vec<Value>, LinkedinError> {
         let count = limit.unwrap_or(MAX_SEARCH_COUNT).min(MAX_SEARCH_COUNT);
-        
+
         let default_params = vec![
             ("count".to_string(), count.to_string()),
             ("filters".to_string(), "List()".to_string()),
@@ -199,55 +260,72 @@ impl LinkedinInner {
             ("start".to_string(), "0".to_string()),
             ("queryContext".to_string(), "List(spellCorrectionEnabled->true,relatedSearchesEnabled->true,kcardTypes->PROFILE|COMPANY)".to_string()),
         ];
-        
+
         for (key, value) in default_params {
             params.entry(key).or_insert(value);
         }
-        
+
         let mut results = vec![];
         let mut start = 0;
         let target_limit = limit.unwrap_or(usize::MAX);
-        
+
         loop {
             params.insert("start".to_string(), start.to_string());
-            
-            let query_string: String = params.iter()
+
+            let query_string: String = params
+                .iter()
                 .map(|(k, v)| format!("{}={}", encode(k), encode(v)))
                 .collect::<Vec<_>>()
                 .join("&");
-            
-            let res = self.client.get(&format!("/search/blended?{}", query_string)).await?;
+
+            let res = self
+                .client
+                .get(&format!("/search/blended?{}", query_string))
+                .await?;
             let data: Value = res.json().await?;
-            
+
             let mut new_elements = vec![];
-            
-            if let Some(elements) = data.get("data").and_then(|d| d.get("elements")).and_then(|e| e.as_array()) {
+
+            if let Some(elements) = data
+                .get("data")
+                .and_then(|d| d.get("elements"))
+                .and_then(|e| e.as_array())
+            {
                 for element in elements {
-                    if let Some(inner_elements) = element.get("elements").and_then(|e| e.as_array()) {
+                    if let Some(inner_elements) = element.get("elements").and_then(|e| e.as_array())
+                    {
                         new_elements.extend(inner_elements.iter().cloned());
                     }
                 }
             }
-            
+
             if new_elements.is_empty() {
                 break;
             }
-            
-            results.extend(new_elements.iter().take(target_limit.saturating_sub(results.len())).cloned());
-            
+
+            results.extend(
+                new_elements
+                    .iter()
+                    .take(target_limit.saturating_sub(results.len()))
+                    .cloned(),
+            );
+
             if results.len() >= target_limit || results.len() / count >= MAX_REPEATED_REQUESTS {
                 break;
             }
-            
+
             start += count;
         }
-        
+
         Ok(results.into_iter().take(target_limit).collect())
     }
 
-    pub async fn search_people(&self, params: SearchPeopleParams) -> Result<Vec<PersonSearchResult>, LinkedinError> {
+    pub async fn search_people(
+        &self,
+        params: SearchPeopleParams,
+    ) -> Result<Vec<PersonSearchResult>, LinkedinError> {
         let mut filters = vec!["resultType->PEOPLE".to_string()];
-        
+
         if let Some(connection_of) = &params.connection_of {
             filters.push(format!("connectionOf->{}", connection_of));
         }
@@ -270,31 +348,42 @@ impl LinkedinInner {
             filters.push(format!("profileLanguage->{}", profile_languages.join("|")));
         }
         if let Some(nonprofit_interests) = &params.nonprofit_interests {
-            filters.push(format!("nonprofitInterest->{}", nonprofit_interests.join("|")));
+            filters.push(format!(
+                "nonprofitInterest->{}",
+                nonprofit_interests.join("|")
+            ));
         }
         if let Some(schools) = &params.schools {
             filters.push(format!("schools->{}", schools.join("|")));
         }
-        
+
         let mut search_params = HashMap::new();
-        search_params.insert("filters".to_string(), format!("List({})", filters.join(",")));
-        
+        search_params.insert(
+            "filters".to_string(),
+            format!("List({})", filters.join(",")),
+        );
+
         if let Some(keywords) = &params.keywords {
             search_params.insert("keywords".to_string(), keywords.clone());
         }
-        
+
         let data = self.search(search_params, params.limit).await?;
-        
+
         let mut results = vec![];
         for item in data {
             if let Some(public_id) = item.get("publicIdentifier").and_then(|p| p.as_str()) {
-                let urn_id = item.get("targetUrn")
-    .and_then(|u| u.as_str())
-    .and_then(|s| UniformResourceName::parse(s).ok())
-    .map(|urn| urn.id)
-    .unwrap_or_default();
-                let distance = item.get("memberDistance").and_then(|d| d.get("value")).and_then(|v| v.as_str()).unwrap_or("");
-                
+                let urn_id = item
+                    .get("targetUrn")
+                    .and_then(|u| u.as_str())
+                    .and_then(|s| UniformResourceName::parse(s).ok())
+                    .map(|urn| urn.id)
+                    .unwrap_or_default();
+                let distance = item
+                    .get("memberDistance")
+                    .and_then(|d| d.get("value"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+
                 results.push(PersonSearchResult {
                     urn_id: urn_id.to_string(),
                     public_id: public_id.to_string(),
@@ -302,107 +391,153 @@ impl LinkedinInner {
                 });
             }
         }
-        
+
         Ok(results)
     }
 
-    pub async fn get_company_updates(&self, public_id: Option<&str>, uniform_resource_name: Option<&str>, max_results: Option<usize>) -> Result<Vec<Value>, LinkedinError> {
-        let id = public_id.or(uniform_resource_name).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or uniform_resource_name must be provided".to_string()))?;
-        
+    pub async fn get_company_updates(
+        &self,
+        public_id: Option<&str>,
+        uniform_resource_name: Option<&str>,
+        max_results: Option<usize>,
+    ) -> Result<Vec<Value>, LinkedinError> {
+        let id = public_id.or(uniform_resource_name).ok_or_else(|| {
+            LinkedinError::InvalidInput(
+                "Either public_id or uniform_resource_name must be provided".to_string(),
+            )
+        })?;
+
         let mut results = vec![];
         let mut start = 0;
         let max_results = max_results.unwrap_or(usize::MAX);
-        
+
         loop {
             let params = format!("?companyUniversalName={}&q=companyFeedByUniversalName&moduleKey=member-share&count={}&start={}", 
                 id, MAX_UPDATE_COUNT, start);
-            
+
             let res = self.client.get(&format!("/feed/updates{}", params)).await?;
             let data: Value = res.json().await?;
-            
+
             if let Some(elements) = data.get("elements").and_then(|e| e.as_array()) {
-                if elements.is_empty() || results.len() >= max_results || results.len() / MAX_UPDATE_COUNT >= MAX_REPEATED_REQUESTS {
+                if elements.is_empty()
+                    || results.len() >= max_results
+                    || results.len() / MAX_UPDATE_COUNT >= MAX_REPEATED_REQUESTS
+                {
                     break;
                 }
-                
-                results.extend(elements.iter().take(max_results.saturating_sub(results.len())).cloned());
+
+                results.extend(
+                    elements
+                        .iter()
+                        .take(max_results.saturating_sub(results.len()))
+                        .cloned(),
+                );
                 start += MAX_UPDATE_COUNT;
             } else {
                 break;
             }
         }
-        
+
         Ok(results)
     }
 
-    pub async fn get_profile_updates(&self, public_id: Option<&str>, uniform_resource_name: Option<&str>, max_results: Option<usize>) -> Result<Vec<Value>, LinkedinError> {
-        let id = public_id.or(uniform_resource_name).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or uniform_resource_name must be provided".to_string()))?;
-        
+    pub async fn get_profile_updates(
+        &self,
+        public_id: Option<&str>,
+        uniform_resource_name: Option<&str>,
+        max_results: Option<usize>,
+    ) -> Result<Vec<Value>, LinkedinError> {
+        let id = public_id.or(uniform_resource_name).ok_or_else(|| {
+            LinkedinError::InvalidInput(
+                "Either public_id or uniform_resource_name must be provided".to_string(),
+            )
+        })?;
+
         let mut results = vec![];
         let mut start = 0;
         let max_results = max_results.unwrap_or(usize::MAX);
-        
+
         loop {
-            let params = format!("?profileId={}&q=memberShareFeed&moduleKey=member-share&count={}&start={}", 
-                id, MAX_UPDATE_COUNT, start);
-            
+            let params = format!(
+                "?profileId={}&q=memberShareFeed&moduleKey=member-share&count={}&start={}",
+                id, MAX_UPDATE_COUNT, start
+            );
+
             let res = self.client.get(&format!("/feed/updates{}", params)).await?;
             let data: Value = res.json().await?;
-            
+
             if let Some(elements) = data.get("elements").and_then(|e| e.as_array()) {
-                if elements.is_empty() || results.len() >= max_results || results.len() / MAX_UPDATE_COUNT >= MAX_REPEATED_REQUESTS {
+                if elements.is_empty()
+                    || results.len() >= max_results
+                    || results.len() / MAX_UPDATE_COUNT >= MAX_REPEATED_REQUESTS
+                {
                     break;
                 }
-                
-                results.extend(elements.iter().take(max_results.saturating_sub(results.len())).cloned());
+
+                results.extend(
+                    elements
+                        .iter()
+                        .take(max_results.saturating_sub(results.len()))
+                        .cloned(),
+                );
                 start += MAX_UPDATE_COUNT;
             } else {
                 break;
             }
         }
-        
+
         Ok(results)
     }
 
     pub async fn get_current_profile_views(&self) -> Result<u64, LinkedinError> {
         let res = self.client.get("/identity/wvmpCards").await?;
         let data: Value = res.json().await?;
-        
-        let views = data.get("elements")
+
+        let views = data
+            .get("elements")
             .and_then(|e| e.get(0))
             .and_then(|e| e.get("value"))
             .and_then(|v| v.get("com.linkedin.voyager.identity.me.wvmpOverview.WvmpViewersCard"))
             .and_then(|c| c.get("insightCards"))
             .and_then(|i| i.get(0))
             .and_then(|i| i.get("value"))
-            .and_then(|v| v.get("com.linkedin.voyager.identity.me.wvmpOverview.WvmpSummaryInsightCard"))
+            .and_then(|v| {
+                v.get("com.linkedin.voyager.identity.me.wvmpOverview.WvmpSummaryInsightCard")
+            })
             .and_then(|s| s.get("numViews"))
             .and_then(|n| n.as_u64())
             .unwrap_or(0);
-        
+
         Ok(views)
     }
 
     pub async fn get_school(&self, public_id: &str) -> Result<School, LinkedinError> {
         let params = format!("?decorationId=com.linkedin.voyager.deco.organization.web.WebFullCompanyMain-12&q=universalName&universalName={}", public_id);
-        
-        let res = self.client.get(&format!("/organization/companies{}", params)).await?;
+
+        let res = self
+            .client
+            .get(&format!("/organization/companies{}", params))
+            .await?;
         let data: Value = res.json().await?;
-        
+
         if let Some(status) = data.get("status") {
             if status != 200 {
-                return Err(LinkedinError::RequestFailed("School request failed".to_string()));
+                return Err(LinkedinError::RequestFailed(
+                    "School request failed".to_string(),
+                ));
             }
         }
-        
-        let school_data = data.get("elements")
+
+        let school_data = data
+            .get("elements")
             .and_then(|e| e.get(0))
             .ok_or_else(|| LinkedinError::RequestFailed("No school data found".to_string()))?;
-        
-        let name = school_data.get("name")
+
+        let name = school_data
+            .get("name")
             .and_then(|n| n.as_str())
             .ok_or_else(|| LinkedinError::RequestFailed("No school name found".to_string()))?;
-        
+
         Ok(School {
             name: name.to_string(),
         })
@@ -410,85 +545,115 @@ impl LinkedinInner {
 
     pub async fn get_company(&self, public_id: &str) -> Result<Company, LinkedinError> {
         let params = format!("?decorationId=com.linkedin.voyager.deco.organization.web.WebFullCompanyMain-12&q=universalName&universalName={}", public_id);
-        
-        let res = self.client.get(&format!("/organization/companies{}", params)).await?;
+
+        let res = self
+            .client
+            .get(&format!("/organization/companies{}", params))
+            .await?;
         let data: Value = res.json().await?;
-        
+
         if let Some(status) = data.get("status") {
             if status != 200 {
-                return Err(LinkedinError::RequestFailed(data.get("message").unwrap_or(&Value::String("Unknown error".to_string())).as_str().unwrap().to_string()));
+                return Err(LinkedinError::RequestFailed(
+                    data.get("message")
+                        .unwrap_or(&Value::String("Unknown error".to_string()))
+                        .as_str()
+                        .unwrap()
+                        .to_string(),
+                ));
             }
         }
-        
-        let company_data = data.get("elements")
+
+        let company_data = data
+            .get("elements")
             .and_then(|e| e.get(0))
             .ok_or_else(|| LinkedinError::RequestFailed("No company data found".to_string()))?;
-        
-        let name = company_data.get("name")
+
+        let name = company_data
+            .get("name")
             .and_then(|n| n.as_str())
             .ok_or_else(|| LinkedinError::RequestFailed("No company name found".to_string()))?;
-        
+
         Ok(Company {
             name: name.to_string(),
         })
     }
 
-    pub async fn get_conversation_details(&self, profile_uniform_resource_name: &str) -> Result<ConversationDetails, LinkedinError> {
+    pub async fn get_conversation_details(
+        &self,
+        profile_uniform_resource_name: &str,
+    ) -> Result<ConversationDetails, LinkedinError> {
         let res = self.client.get(&format!("/messaging/conversations?keyVersion=LEGACY_INBOX&q=participants&recipients=List({})", profile_uniform_resource_name)).await?;
         let data: Value = res.json().await?;
-        
-        let item = data.get("elements")
+
+        let item = data
+            .get("elements")
             .and_then(|e| e.get(0))
             .ok_or_else(|| LinkedinError::RequestFailed("No conversation found".to_string()))?;
-        
-        let entity_urn = item.get("entityUrn").and_then(|u| u.as_str())
-    .ok_or(LinkedinError::RequestFailed("No entityUrn".into()))?;
-let urn = UniformResourceName::parse(entity_urn)?;
-let id = urn.id;
-        
-        Ok(ConversationDetails {
-            id: id.to_string(),
-        })
+
+        let entity_urn = item
+            .get("entityUrn")
+            .and_then(|u| u.as_str())
+            .ok_or(LinkedinError::RequestFailed("No entityUrn".into()))?;
+        let urn = UniformResourceName::parse(entity_urn)?;
+        let id = urn.id;
+
+        Ok(ConversationDetails { id: id.to_string() })
     }
 
     pub async fn get_conversations(&self) -> Result<Vec<Conversation>, LinkedinError> {
-        let res = self.client.get("/messaging/conversations?keyVersion=LEGACY_INBOX").await?;
+        let res = self
+            .client
+            .get("/messaging/conversations?keyVersion=LEGACY_INBOX")
+            .await?;
         let data: Value = res.json().await?;
-        
+
         let mut conversations = vec![];
-        
+
         if let Some(elements) = data.get("elements").and_then(|e| e.as_array()) {
             for element in elements {
                 if let Some(entity_urn) = element.get("entityUrn").and_then(|u| u.as_str()) {
                     let id = UniformResourceName::parse(entity_urn).unwrap().id;
-                    conversations.push(Conversation {
-                        id,
-                    });
+                    conversations.push(Conversation { id });
                 }
             }
         }
-        
+
         Ok(conversations)
     }
 
-    pub async fn get_conversation(&self, conversation_uniform_resource_name: &str) -> Result<Conversation, LinkedinError> {
-        let res = self.client.get(&format!("/messaging/conversations/{}/events", conversation_uniform_resource_name)).await?;
+    pub async fn get_conversation(
+        &self,
+        conversation_uniform_resource_name: &str,
+    ) -> Result<Conversation, LinkedinError> {
+        let res = self
+            .client
+            .get(&format!(
+                "/messaging/conversations/{}/events",
+                conversation_uniform_resource_name
+            ))
+            .await?;
         let _data: Value = res.json().await?;
-        
+
         Ok(Conversation {
             id: conversation_uniform_resource_name.to_string(),
         })
     }
 
-    pub async fn send_message(&self, conversation_uniform_resource_name: Option<&str>, recipients: Option<Vec<String>>, message_body: &str) -> Result<bool, LinkedinError> {
+    pub async fn send_message(
+        &self,
+        conversation_uniform_resource_name: Option<&str>,
+        recipients: Option<Vec<String>>,
+        message_body: &str,
+    ) -> Result<bool, LinkedinError> {
         if conversation_uniform_resource_name.is_none() && recipients.is_none() {
             return Ok(true); // Error case
         }
-        
+
         if message_body.is_empty() {
             return Ok(true); // Error case
         }
-        
+
         let message_event = json!({
             "eventCreate": {
                 "value": {
@@ -504,28 +669,38 @@ let id = urn.id;
                 }
             }
         });
-        
+
         let res = if let Some(conv_id) = conversation_uniform_resource_name {
-            self.client.post(&format!("/messaging/conversations/{}/events?action=create", conv_id), &message_event).await?
+            self.client
+                .post(
+                    &format!("/messaging/conversations/{}/events?action=create", conv_id),
+                    &message_event,
+                )
+                .await?
         } else if let Some(recips) = recipients {
             let mut payload = message_event;
             payload["recipients"] = json!(recips);
             payload["subtype"] = json!("MEMBER_TO_MEMBER");
-            
+
             let full_payload = json!({
                 "keyVersion": "LEGACY_INBOX",
                 "conversationCreate": payload
             });
-            
-            self.client.post("/messaging/conversations?action=create", &full_payload).await?
+
+            self.client
+                .post("/messaging/conversations?action=create", &full_payload)
+                .await?
         } else {
             return Ok(true); // Error case
         };
-        
+
         Ok(res.status() != 201)
     }
 
-    pub async fn mark_conversation_as_seen(&self, conversation_uniform_resource_name: &str) -> Result<bool, LinkedinError> {
+    pub async fn mark_conversation_as_seen(
+        &self,
+        conversation_uniform_resource_name: &str,
+    ) -> Result<bool, LinkedinError> {
         let payload = json!({
             "patch": {
                 "$set": {
@@ -533,8 +708,17 @@ let id = urn.id;
                 }
             }
         });
-        
-        let res = self.client.post(&format!("/messaging/conversations/{}", conversation_uniform_resource_name), &payload).await?;
+
+        let res = self
+            .client
+            .post(
+                &format!(
+                    "/messaging/conversations/{}",
+                    conversation_uniform_resource_name
+                ),
+                &payload,
+            )
+            .await?;
         Ok(res.status() != 200)
     }
 
@@ -544,25 +728,35 @@ let id = urn.id;
         res.json().await.map_err(Into::into)
     }
 
-    pub async fn get_invitations(&self, start: usize, limit: usize) -> Result<Vec<Invitation>, LinkedinError> {
-        let params = format!("?start={}&count={}&includeInsights=true&q=receivedInvitation", start, limit);
-        
-        let res = self.client.get(&format!("/relationships/invitationViews{}", params)).await?;
-        
+    pub async fn get_invitations(
+        &self,
+        start: usize,
+        limit: usize,
+    ) -> Result<Vec<Invitation>, LinkedinError> {
+        let params = format!(
+            "?start={}&count={}&includeInsights=true&q=receivedInvitation",
+            start, limit
+        );
+
+        let res = self
+            .client
+            .get(&format!("/relationships/invitationViews{}", params))
+            .await?;
+
         if res.status() != 200 {
             return Ok(vec![]);
         }
-        
+
         let data: Value = res.json().await?;
-        
+
         let mut invitations = vec![];
-        
+
         if let Some(elements) = data.get("elements").and_then(|e| e.as_array()) {
             for element in elements {
                 if let Some(invitation) = element.get("invitation") {
                     if let (Some(entity_urn), Some(shared_secret)) = (
                         invitation.get("entityUrn").and_then(|u| u.as_str()),
-                        invitation.get("sharedSecret").and_then(|s| s.as_str())
+                        invitation.get("sharedSecret").and_then(|s| s.as_str()),
                     ) {
                         invitations.push(Invitation {
                             entity_urn: entity_urn.to_string(),
@@ -572,53 +766,94 @@ let id = urn.id;
                 }
             }
         }
-        
+
         Ok(invitations)
     }
 
-    pub async fn reply_invitation(&self, invitation_entity_urn: &str, invitation_shared_secret: &str, action: &str) -> Result<bool, LinkedinError> {
-                let urn = UniformResourceName::parse(invitation_entity_urn)?;
-        
+    pub async fn reply_invitation(
+        &self,
+        invitation_entity_urn: &str,
+        invitation_shared_secret: &str,
+        action: &str,
+    ) -> Result<bool, LinkedinError> {
+        let urn = UniformResourceName::parse(invitation_entity_urn)?;
+
         let payload = json!({
             "invitationId": urn.id,
             "invitationSharedSecret": invitation_shared_secret,
             "isGenericInvitation": false
         });
-        
-let invitation_id = urn.id;
-let res = self.client.post(
-    &format!("/relationships/invitations/{}?action={}", invitation_id, action),
-    &payload,
-).await?;
-        
+
+        let invitation_id = urn.id;
+        let res = self
+            .client
+            .post(
+                &format!(
+                    "/relationships/invitations/{}?action={}",
+                    invitation_id, action
+                ),
+                &payload,
+            )
+            .await?;
+
         Ok(res.status() == 200)
     }
 
     pub async fn remove_connection(&self, public_profile_id: &str) -> Result<bool, LinkedinError> {
-        let res = self.client.post(&format!("/identity/profiles/{}/profileActions?action=disconnect", public_profile_id), &json!({})).await?;
-        
+        let res = self
+            .client
+            .post(
+                &format!(
+                    "/identity/profiles/{}/profileActions?action=disconnect",
+                    public_profile_id
+                ),
+                &json!({}),
+            )
+            .await?;
+
         Ok(res.status() != 200)
     }
 
-    pub async fn get_profile_privacy_settings(&self, public_profile_id: &str) -> Result<HashMap<String, Value>, LinkedinError> {
-        let res = self.client.get(&format!("/identity/profiles/{}/privacySettings", public_profile_id)).await?;
-        
+    pub async fn get_profile_privacy_settings(
+        &self,
+        public_profile_id: &str,
+    ) -> Result<HashMap<String, Value>, LinkedinError> {
+        let res = self
+            .client
+            .get(&format!(
+                "/identity/profiles/{}/privacySettings",
+                public_profile_id
+            ))
+            .await?;
+
         if res.status() != 200 {
             return Ok(HashMap::new());
         }
-        
+
         let data: Value = res.json().await?;
-        
+
         if let Some(data_obj) = data.get("data").and_then(|d| d.as_object()) {
-            Ok(data_obj.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+            Ok(data_obj
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect())
         } else {
             Ok(HashMap::new())
         }
     }
 
-    pub async fn get_profile_member_badges(&self, public_profile_id: &str) -> Result<MemberBadges, LinkedinError> {
-        let res = self.client.get(&format!("/identity/profiles/{}/memberBadges", public_profile_id)).await?;
-        
+    pub async fn get_profile_member_badges(
+        &self,
+        public_profile_id: &str,
+    ) -> Result<MemberBadges, LinkedinError> {
+        let res = self
+            .client
+            .get(&format!(
+                "/identity/profiles/{}/memberBadges",
+                public_profile_id
+            ))
+            .await?;
+
         if res.status() != 200 {
             return Ok(MemberBadges {
                 premium: false,
@@ -627,56 +862,79 @@ let res = self.client.post(
                 job_seeker: false,
             });
         }
-        
+
         let data: Value = res.json().await?;
-        
+
         let empty_map = Value::Object(serde_json::Map::new());
         let badges_data = data.get("data").unwrap_or(&empty_map);
-        
+
         Ok(MemberBadges {
-            premium: badges_data.get("premium").and_then(|p| p.as_bool()).unwrap_or(false),
-            open_link: badges_data.get("openLink").and_then(|o| o.as_bool()).unwrap_or(false),
-            influencer: badges_data.get("influencer").and_then(|i| i.as_bool()).unwrap_or(false),
-            job_seeker: badges_data.get("jobSeeker").and_then(|j| j.as_bool()).unwrap_or(false),
+            premium: badges_data
+                .get("premium")
+                .and_then(|p| p.as_bool())
+                .unwrap_or(false),
+            open_link: badges_data
+                .get("openLink")
+                .and_then(|o| o.as_bool())
+                .unwrap_or(false),
+            influencer: badges_data
+                .get("influencer")
+                .and_then(|i| i.as_bool())
+                .unwrap_or(false),
+            job_seeker: badges_data
+                .get("jobSeeker")
+                .and_then(|j| j.as_bool())
+                .unwrap_or(false),
         })
     }
 
-    pub async fn get_profile_network_info(&self, public_profile_id: &str) -> Result<NetworkInfo, LinkedinError> {
-        let res = self.client.get(&format!("/identity/profiles/{}/networkinfo", public_profile_id)).await?;
-        
+    pub async fn get_profile_network_info(
+        &self,
+        public_profile_id: &str,
+    ) -> Result<NetworkInfo, LinkedinError> {
+        let res = self
+            .client
+            .get(&format!(
+                "/identity/profiles/{}/networkinfo",
+                public_profile_id
+            ))
+            .await?;
+
         if res.status() != 200 {
-            return Ok(NetworkInfo {
-                followers_count: 0,
-            });
+            return Ok(NetworkInfo { followers_count: 0 });
         }
-        
+
         let data: Value = res.json().await?;
-        
-        let followers_count = data.get("data")
+
+        let followers_count = data
+            .get("data")
             .and_then(|d| d.get("followersCount"))
             .and_then(|f| f.as_u64())
             .unwrap_or(0);
-        
-        Ok(NetworkInfo {
-            followers_count,
-        })
+
+        Ok(NetworkInfo { followers_count })
     }
 
-    pub async fn stub_people_search(&self, query: &str, count: usize, start: usize) -> Result<Value, LinkedinError> {
+    pub async fn stub_people_search(
+        &self,
+        query: &str,
+        count: usize,
+        start: usize,
+    ) -> Result<Value, LinkedinError> {
         let encoded_query = encode(query);
-        
+
         let mut url = format!("/search/hits?count={}&guides=List%28v-%253EPEOPLE%29&keywords={}&origin=SWITCH_SEARCH_VERTICAL&q=guided", count, encoded_query);
-        
+
         if start > 0 {
             url.push_str(&format!("&start={}", start));
         }
-        
+
         let res = self.client.get(&url).await?;
-        
+
         if res.status() != 200 {
             return Ok(json!({}));
         }
-        
+
         res.json().await.map_err(Into::into)
     }
 }

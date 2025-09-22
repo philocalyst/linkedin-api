@@ -175,7 +175,6 @@ pub struct ImageArtifact {
     pub file_identifying_url_path_segment: Option<String>,
 }
 
-
 /// An experience entry
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
