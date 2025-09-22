@@ -45,13 +45,7 @@ impl LinkedinInner {
         // Parse profile data
         let profile_data = data.get("profile").ok_or_else(|| LinkedinError::RequestFailed("No profile data found".to_string()))?;
         
-        let mut profile = Profile {
-            profile_id: String::new(),
-            display_picture_url: None,
-            experience: vec![],
-            education: vec![],
-            skills: vec![],
-        };
+        let mut profile = Profile::default();
         
         // Extract profile ID
         if let Some(mini_profile) = profile_data.get("miniProfile") {

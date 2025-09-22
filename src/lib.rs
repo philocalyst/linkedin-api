@@ -205,7 +205,7 @@ pub struct SearchPeopleParams {
 }
 
 /// Strongly-typed struct for profiles.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Profile {
     pub profile_id: String,
     #[serde(rename = "displayPictureUrl")]
@@ -215,7 +215,7 @@ pub struct Profile {
     pub skills: Vec<Skill>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Experience {
     pub title: Option<String>,
     #[serde(rename = "companyName")]
@@ -224,7 +224,7 @@ pub struct Experience {
     pub company_logo_url: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Education {
     #[serde(rename = "schoolName")]
     pub school_name: Option<String>,
@@ -232,7 +232,7 @@ pub struct Education {
     pub field_of_study: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Skill {
     pub name: String,
 }
