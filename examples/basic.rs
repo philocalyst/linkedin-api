@@ -1,4 +1,4 @@
-use linkedin_api_rs::{Identity, Linkedin, LinkedinError};
+use linkedin_api::{types::Identity, Linkedin, LinkedinError};
 use std::env;
 
 #[tokio::main]
@@ -7,12 +7,8 @@ async fn main() -> Result<(), LinkedinError> {
 
     let api = Linkedin::new(&input, false).await?;
 
-    let profile = api.get_profile("ACoAABQ11fIBQLGQbB1V1XPBZJsRwfK5r1U2Rzw").await?;
-    let contact_info = api.get_profile_contact_info("ACoAABQ11fIBQLGQbB1V1XPBZJsRwfK5r1U2Rzw").await?;
-    let connections = api.get_profile_connections(&profile.profile_id).await?;
+    let profile = api.get_profile("miles-wirht-b3b675265").await?;
 
     println!("Profile: {:?}", profile);
-    println!("Contact info: {:?}", contact_info);
-    println!("Connections: {:?}", connections);
     Ok(())
 }
