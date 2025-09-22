@@ -14,6 +14,9 @@ pub enum LinkedinError {
     
     #[error("Request failed: {0}")]
     RequestFailed(String),
+
+    #[error("Request failed: {0}")]
+    InvalidURN(String),
     
     #[error("Rate limit exceeded")]
     RateLimit,
