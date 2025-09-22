@@ -9,6 +9,7 @@ use serde_json::Value;
 
 use crate::error::LinkedinError;
 use crate::utils::evade;
+use crate::Identity;
 
 const API_BASE_URL: &str = "https://www.linkedin.com/voyager/api";
 const AUTH_BASE_URL: &str = "https://www.linkedin.com";
@@ -42,7 +43,8 @@ impl Client {
         Ok(Self { client, cookie_jar: jar })
     }
 
-    pub async fn authenticate(&self, username: &str, password: &str, refresh: bool) -> Result<(), LinkedinError> {
+    pub async fn authenticate(&self, identity: &Identity, refresh: bool) -> Result<(), LinkedinError> {
+        let url = Url::parse("https://www.linkedin.com")?;
         if !refresh {
             if self.load_cookies().is_ok() {
                 return Ok(());
@@ -52,9 +54,12 @@ impl Client {
         // Request session cookies
         self.request_session_cookies().await?;
 
+        self.cookie_jar.add_cookie_str(&format!("li_at={}; Domain=.linkedin.com; Path=/; Secure; HttpOnly", identity.authentication_token), &url);
+        self.cookie_jar.add_cookie_str(&format!("JSESSIONID={}; Domain=.linkedin.com; Path=/; Secure; HttpOnly", identity.session_cookie), &url);
+
         let mut form = std::collections::HashMap::new();
-        form.insert("session_key", username);
-        form.insert("session_password", password);
+        form.insert("session_key", &identity.username);
+        form.insert("session_password", &identity.password);
         
         let jsession_id = self.get_jsession_id();
         form.insert("JSESSIONID", &jsession_id);

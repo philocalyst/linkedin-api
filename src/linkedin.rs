@@ -6,9 +6,7 @@ use crate::client::Client;
 use crate::error::LinkedinError;
 use crate::utils::get_id_from_urn;
 use crate::{
-    Profile, ContactInfo, Skill, Connection, Conversation, ConversationDetails,
-    MemberBadges, NetworkInfo, School, Company, PersonSearchResult, Invitation,
-    SearchPeopleParams
+    Company, Connection, ContactInfo, Conversation, ConversationDetails, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, SearchPeopleParams, Skill
 };
 
 const MAX_UPDATE_COUNT: usize = 100;
@@ -21,9 +19,9 @@ pub struct LinkedinInner {
 }
 
 impl LinkedinInner {
-    pub async fn new(username: &str, password: &str, refresh_cookies: bool) -> Result<Self, LinkedinError> {
+    pub async fn new(identity: &Identity, refresh_cookies: bool) -> Result<Self, LinkedinError> {
         let client = Client::new()?;
-        client.authenticate(username, password, refresh_cookies).await?;
+        client.authenticate(identity, refresh_cookies).await?;
         Ok(Self { client })
     }
 

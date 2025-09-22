@@ -48,8 +48,8 @@ pub struct Identity {
 
 impl Linkedin {
     /// Create a new LinkedIn client and authenticate.
-    pub async fn new(username: &str, password: &str, refresh_cookies: bool) -> Result<Self, LinkedinError> {
-        let inner = LinkedinInner::new(username, password, refresh_cookies).await?;
+    pub async fn new(identity: &Identity, refresh_cookies: bool) -> Result<Self, LinkedinError> {
+        let inner = LinkedinInner::new(identity, refresh_cookies).await?;
         Ok(Self { inner })
     }
 
