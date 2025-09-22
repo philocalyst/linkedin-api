@@ -39,6 +39,35 @@ pub struct Linkedin {
     inner: LinkedinInner,
 }
 
+struct UniformResourceName {
+    namespace: String, // the context of the id
+    id: String,
+}
+
+impl UniformResourceName {
+    pub fn new(urn: &str) -> Result<Self, LinkedinError> {
+        let parts: Vec<&str> = urn.split(':').collect();
+        if parts.len() < 4 {
+            return Err(LinkedinError::InvalidInput(
+                format!("Not enough components in URN: {}", urn),
+            ));
+        }
+
+        // Skip the first part (just qualifier that this is indeed an urn)
+
+        let namespace = parts[2].to_string();
+        let id = parts[3].to_string();
+
+        Ok(Self { namespace, id })
+    }
+}
+
+impl AsRef<str> for UniformResourceName {
+    fn as_ref(&self) -> &str {
+        &self.id
+    }
+}
+
 pub struct Identity {
     pub authentication_token: String,
     pub session_cookie: String,
