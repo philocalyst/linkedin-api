@@ -25,94 +25,46 @@ impl LinkedinInner {
         Ok(Self { client })
     }
 
-    pub async fn get_profile(&self, public_id: Option<&str>, urn_id: Option<&str>) -> Result<Profile, LinkedinError> {
-        let id = public_id.or(urn_id).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or urn_id must be provided".to_string()))?;
-        
-        let res = self.client.get(&format!("/identity/profiles/{}/profileView", id)).await?;
-        
-        if res.status() != 200 {
-            return Err(LinkedinError::RequestFailed(format!("Profile request failed: {}", res.status())));
-        }
-        
-        let data: Value = res.json().await?;
-        
-        if let Some(status) = data.get("status") {
-            if status != 200 {
-                return Err(LinkedinError::RequestFailed(data.get("message").unwrap_or(&Value::String("Unknown error".to_string())).as_str().unwrap().to_string()));
-            }
-        }
-        
-        // Parse profile data
-        let profile_data = data.get("profile").ok_or_else(|| LinkedinError::RequestFailed("No profile data found".to_string()))?;
-        
-        let mut profile = Profile::default();
-        
-        // Extract profile ID
-        if let Some(mini_profile) = profile_data.get("miniProfile") {
-            if let Some(entity_urn) = mini_profile.get("entityUrn") {
-                profile.profile_id = get_id_from_urn(entity_urn.as_str().unwrap()).to_string();
-            }
-            
-            if let Some(picture) = mini_profile.get("picture") {
-                if let Some(vector_image) = picture.get("com.linkedin.common.VectorImage") {
-                    if let Some(root_url) = vector_image.get("rootUrl") {
-                        profile.display_picture_url = Some(root_url.as_str().unwrap().to_string());
-                    }
-                }
-            }
-        }
-        
-        // Extract experience
-        if let Some(position_view) = data.get("positionView") {
-            if let Some(elements) = position_view.get("elements").and_then(|e| e.as_array()) {
-                for element in elements {
-                    let mut experience = crate::Experience {
-                        title: element.get("title").and_then(|t| t.as_str()).map(|s| s.to_string()),
-                        company_name: None,
-                        company_logo_url: None,
-                    };
-                    
-                    if let Some(company) = element.get("company") {
-                        if let Some(company_name) = company.get("name") {
-                            experience.company_name = company_name.as_str().map(|s| s.to_string());
-                        }
-                        
-                        if let Some(mini_company) = company.get("miniCompany") {
-                            if let Some(logo) = mini_company.get("logo") {
-                                if let Some(vector_image) = logo.get("com.linkedin.common.VectorImage") {
-                                    if let Some(root_url) = vector_image.get("rootUrl") {
-                                        experience.company_logo_url = Some(root_url.as_str().unwrap().to_string());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    profile.experience.push(experience);
-                }
-            }
-        }
-        
-        // Extract education
-        if let Some(education_view) = data.get("educationView") {
-            if let Some(elements) = education_view.get("elements").and_then(|e| e.as_array()) {
-                for element in elements {
-                    let education = crate::Education {
-                        school_name: element.get("school").and_then(|s| s.get("name")).and_then(|n| n.as_str()).map(|s| s.to_string()),
-                        degree: element.get("degree").and_then(|d| d.as_str()).map(|s| s.to_string()),
-                        field_of_study: element.get("fieldOfStudy").and_then(|f| f.as_str()).map(|s| s.to_string()),
-                    };
-                    
-                    profile.education.push(education);
-                }
-            }
-        }
-        
-        // Get skills separately
-        profile.skills = self.get_profile_skills(public_id, urn_id).await?;
-        
-        Ok(profile)
+    pub async fn get_profile(
+    &self,
+    public_id: Option<&str>,
+    urn_id: Option<&str>
+) -> Result<Profile, LinkedinError> {
+    let id = public_id
+        .or(urn_id)
+        .ok_or_else(|| LinkedinError::InvalidInput("Provide either public_id or urn_id".into()))?;
+
+    let res = self.client.get(&format!("/identity/profiles/{}/profileView", id)).await?;
+    if res.status() != 200 {
+        return Err(LinkedinError::RequestFailed(format!("status {}", res.status())));
     }
+
+    let data: serde_json::Value = res.json().await?;
+    let profile_val = data.get("profile")
+        .ok_or_else(|| LinkedinError::RequestFailed("No 'profile' key".into()))?
+        .clone();
+
+    let mut profile: Profile = serde_json::from_value(profile_val)?;
+    
+    // Derive helper fields not serialized directly
+    if let Some(mini) = &profile.mini_profile {
+        if let Some(urn) = &mini.entity_urn {
+            profile.profile_id = crate::utils::get_id_from_urn(urn).to_string();
+        }
+    }
+
+    // Fill in profile_id
+    if let Some(mini) = &profile.mini_profile {
+    if let Some(urn) = &mini.entity_urn {
+        profile.profile_id = crate::utils::get_id_from_urn(urn).to_string();
+    }
+}
+
+    // Fill in skills (separate endpoint)
+    profile.skills = self.get_profile_skills(public_id, urn_id).await?;
+
+    Ok(profile)
+}
 
     pub async fn get_profile_contact_info(&self, public_id: Option<&str>, urn_id: Option<&str>) -> Result<ContactInfo, LinkedinError> {
         let id = public_id.or(urn_id).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or urn_id must be provided".to_string()))?;

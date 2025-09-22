@@ -251,10 +251,10 @@ pub struct Profile {
     #[serde(rename = "versionTag")]
     pub version_tag: Option<String>,
 
-    // Add commonly used fields for convenience
+    #[serde(skip)]
     pub profile_id: String, // extracted from entityUrn with get_id_from_urn
-    pub experience: Vec<Experience>,
-    pub education: Vec<Education>,
+
+    #[serde(skip)]
     pub skills: Vec<Skill>,
 }
 
