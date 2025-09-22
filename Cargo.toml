@@ -1,0 +1,22 @@
+[package]
+name = "linkedin-api-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Rust Wrapper for the LinkedIn API"
+license = "MIT"
+repository = "https://github.com/your-repo/linkedin-api-rs"  # Update with your repo
+authors = ["Your Name your.email@example.com"]  # Adapted from original
+
+[dependencies]
+reqwest = { version = "0.11", features = ["json", "cookies"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tokio = { version = "1", features = ["full"] }
+cookie_store = "0.21"
+url = "2.5"
+rand = "0.8"
+urlencoding = "2.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util", "macros"] }
