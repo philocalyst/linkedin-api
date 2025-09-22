@@ -3,7 +3,7 @@ name = "linkedin-api"
 version = "0.1.0"
 edition = "2021"
 description = "Rust Wrapper for the LinkedIn API"
-license = "AGPLv3"
+license = "AGPL-3.0-or-later"
 repository = "https://github.com/philocalyst/linkedin-api" 
 authors = ["Miles Wirht"] 
 
