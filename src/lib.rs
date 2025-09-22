@@ -39,6 +39,13 @@ pub struct Linkedin {
     inner: LinkedinInner,
 }
 
+pub struct Identity {
+    pub username: String,
+    pub password: String,
+    pub authentication_token: String,
+    pub session_cookie: String,
+}
+
 impl Linkedin {
     /// Create a new LinkedIn client and authenticate.
     pub async fn new(username: &str, password: &str, refresh_cookies: bool) -> Result<Self, LinkedinError> {
