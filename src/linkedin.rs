@@ -6,7 +6,7 @@ use crate::client::Client;
 use crate::error::LinkedinError;
 use crate::utils::get_id_from_urn;
 use crate::{
-    Company, Connection, ContactInfo, Conversation, ConversationDetails, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, SearchPeopleParams, Skill
+    Company, Connection, ContactInfo, Conversation, ConversationDetails, Education, Experience, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, SearchPeopleParams, Skill
 };
 
 const MAX_UPDATE_COUNT: usize = 100;
@@ -59,6 +59,18 @@ impl LinkedinInner {
         profile.profile_id = crate::utils::get_id_from_urn(urn).to_string();
     }
 }
+
+// fill in experience
+ if let Some(positions) = data.get("positionView").and_then(|v| v.get("elements")) {
+        let exps: Vec<Experience> = serde_json::from_value(positions.clone())?;
+        profile.experience = exps;
+    }
+
+    // fill in education
+    if let Some(eds) = data.get("educationView").and_then(|v| v.get("elements")) {
+        let eds: Vec<Education> = serde_json::from_value(eds.clone())?;
+        profile.education = eds;
+    }
 
     // Fill in skills (separate endpoint)
     profile.skills = self.get_profile_skills(public_id, urn_id).await?;

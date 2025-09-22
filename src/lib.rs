@@ -255,6 +255,12 @@ pub struct Profile {
     pub profile_id: String, // extracted from entityUrn with get_id_from_urn
 
     #[serde(skip)]
+    pub experience: Vec<Experience>,
+
+    #[serde(skip)]
+    pub education: Vec<Education>,
+
+    #[serde(skip)]
     pub skills: Vec<Skill>,
 }
 
