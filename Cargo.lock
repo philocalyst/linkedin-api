@@ -584,7 +584,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a82ae493e598baaea5209805c49bbf2ea7de956d50d7da0da1164f9c6d28543"
 
 [[package]]
-name = "linkedin-api-rs"
+name = "linkedin-api"
 version = "0.1.0"
 dependencies = [
  "cookie_store 0.21.1",

@@ -1,11 +1,11 @@
 [package]
-name = "linkedin-api-rs"
+name = "linkedin-api"
 version = "0.1.0"
 edition = "2021"
 description = "Rust Wrapper for the LinkedIn API"
-license = "MIT"
-repository = "https://github.com/your-repo/linkedin-api-rs"  # Update with your repo
-authors = ["Your Name your.email@example.com"]  # Adapted from original
+license = "AGPLv3"
+repository = "https://github.com/philocalyst/linkedin-api" 
+authors = ["Miles Wirht"] 
 
 [dependencies]
 reqwest = { version = "0.11", features = ["json", "cookies"] }
