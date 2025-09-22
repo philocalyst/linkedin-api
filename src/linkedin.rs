@@ -6,7 +6,7 @@ use crate::client::Client;
 use crate::error::LinkedinError;
 use crate::utils::get_id_from_urn;
 use crate::{
-    Company, Connection, ContactInfo, Conversation, ConversationDetails, Education, Experience,
+    Company, Connection, ContactInfo, Conversation, ConversationDetails, types::Education, types::Experience,
     Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School,
     SearchPeopleParams, Skill, UniformResourceName,
 };
@@ -132,7 +132,7 @@ impl LinkedinInner {
         // Parse websites
         if let Some(websites) = data.get("websites").and_then(|w| w.as_array()) {
             for website in websites {
-                let mut site = crate::Website {
+                let mut site = crate::types::Website {
                     url: website
                         .get("url")
                         .and_then(|u| u.as_str())

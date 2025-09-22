@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub struct Identity {
+    pub authentication_token: String,
+    pub session_cookie: String,
+}
+
 /// Parameters for people search.
 #[derive(Debug, Clone, Default)]
 pub struct SearchPeopleParams {

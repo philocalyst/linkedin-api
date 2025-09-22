@@ -28,11 +28,10 @@ pub use crate::error::LinkedinError;
 use crate::{
     linkedin::LinkedinInner,
     types::{
-        Company, Connection, ContactInfo, Conversation, ConversationDetails, Invitation,
-        MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, SearchPeopleParams, Skill,
-        UniformResourceName,
+        Company, Connection, ContactInfo, Conversation, ConversationDetails, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, Skill, UniformResourceName
     },
 };
+use crate::types::SearchPeopleParams;
 
 pub mod client;
 pub mod error;
@@ -81,10 +80,6 @@ impl AsRef<str> for UniformResourceName {
     }
 }
 
-pub struct Identity {
-    pub authentication_token: String,
-    pub session_cookie: String,
-}
 
 impl Linkedin {
     /// Create a new LinkedIn client and authenticate.
