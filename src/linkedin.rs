@@ -6,7 +6,7 @@ use crate::client::Client;
 use crate::error::LinkedinError;
 use crate::utils::get_id_from_urn;
 use crate::{
-    Company, Connection, ContactInfo, Conversation, ConversationDetails, Education, Experience, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, SearchPeopleParams, Skill
+    Company, Connection, ContactInfo, Conversation, ConversationDetails, Education, Experience, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, SearchPeopleParams, Skill, UniformResourceName
 };
 
 const MAX_UPDATE_COUNT: usize = 100;
@@ -28,11 +28,15 @@ impl LinkedinInner {
     pub async fn get_profile(
     &self,
     public_id: Option<&str>,
-    urn_id: Option<&str>
+    urn: Option<&UniformResourceName>
 ) -> Result<Profile, LinkedinError> {
-    let id = public_id
-        .or(urn_id)
-        .ok_or_else(|| LinkedinError::InvalidInput("Provide either public_id or urn_id".into()))?;
+    let id = if let Some(pid) = public_id {
+        pid.to_string()
+    } else if let Some(urn) = urn {
+        urn.id.clone()  
+    } else {
+        return Err(LinkedinError::InvalidInput("public_id or uniform_resource_name required".into()));
+    };
 
     let res = self.client.get(&format!("/identity/profiles/{}/profileView", id)).await?;
     if res.status() != 200 {
@@ -48,16 +52,21 @@ impl LinkedinInner {
     
     // Derive helper fields not serialized directly
     if let Some(mini) = &profile.mini_profile {
-        if let Some(urn) = &mini.entity_urn {
-            profile.profile_id = crate::utils::get_id_from_urn(urn).to_string();
+        if let Some(urn_str) = mini.entity_urn.as_deref() {
+            if let Ok(urn) = UniformResourceName::parse(urn_str) {
+                profile.profile_id = urn.id;
+            }
         }
     }
 
     // Fill in profile_id
     if let Some(mini) = &profile.mini_profile {
-    if let Some(urn) = &mini.entity_urn {
-        profile.profile_id = crate::utils::get_id_from_urn(urn).to_string();
-    }
+                if let Some(urn_str) = mini.entity_urn.as_deref() {
+            if let Ok(urn) = UniformResourceName::parse(urn_str) {
+                profile.profile_id = urn.id;
+            }
+        }
+
 }
 
 // fill in experience
@@ -73,13 +82,13 @@ impl LinkedinInner {
     }
 
     // Fill in skills (separate endpoint)
-    profile.skills = self.get_profile_skills(public_id, urn_id).await?;
+    profile.skills = self.get_profile_skills(public_id, urn).await?;
 
     Ok(profile)
 }
 
-    pub async fn get_profile_contact_info(&self, public_id: Option<&str>, urn_id: Option<&str>) -> Result<ContactInfo, LinkedinError> {
-        let id = public_id.or(urn_id).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or urn_id must be provided".to_string()))?;
+    pub async fn get_profile_contact_info(&self, public_id: Option<&str>, uniform_resource_name: Option<&str>) -> Result<ContactInfo, LinkedinError> {
+        let id = public_id.or(uniform_resource_name).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or uniform_resource_name must be provided".to_string()))?;
         
         let res = self.client.get(&format!("/identity/profiles/{}/profileContactInfo", id)).await?;
         let data: Value = res.json().await?;
@@ -134,8 +143,16 @@ impl LinkedinInner {
         Ok(contact_info)
     }
 
-    pub async fn get_profile_skills(&self, public_id: Option<&str>, urn_id: Option<&str>) -> Result<Vec<Skill>, LinkedinError> {
-        let id = public_id.or(urn_id).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or urn_id must be provided".to_string()))?;
+    pub async fn get_profile_skills(&self, public_id: Option<&str>, uniform_resource_name: Option<&UniformResourceName>) -> Result<Vec<Skill>, LinkedinError> {
+        let id = if let Some(pid) = public_id {
+    pid.to_string()                // use raw string
+} else if let Some(urn) = uniform_resource_name {
+    urn.id.clone()                 // use strong type's .id
+} else {
+    return Err(LinkedinError::InvalidInput(
+        "Either public_id or uniform_resource_name must be provided".into()
+    ));
+};
         
         let res = self.client.get(&format!("/identity/profiles/{}/skills?count=100&start=0", id)).await?;
         let data: Value = res.json().await?;
@@ -155,9 +172,9 @@ impl LinkedinInner {
         Ok(skills)
     }
 
-    pub async fn get_profile_connections(&self, urn_id: &str) -> Result<Vec<Connection>, LinkedinError> {
+    pub async fn get_profile_connections(&self, uniform_resource_name: &str) -> Result<Vec<Connection>, LinkedinError> {
         let params = SearchPeopleParams {
-            connection_of: Some(urn_id.to_string()),
+            connection_of: Some(uniform_resource_name.to_string()),
             network_depth: Some("F".to_string()),
             ..Default::default()
         };
@@ -271,7 +288,11 @@ impl LinkedinInner {
         let mut results = vec![];
         for item in data {
             if let Some(public_id) = item.get("publicIdentifier").and_then(|p| p.as_str()) {
-                let urn_id = item.get("targetUrn").and_then(|u| u.as_str()).map(get_id_from_urn).unwrap_or("");
+                let urn_id = item.get("targetUrn")
+    .and_then(|u| u.as_str())
+    .and_then(|s| UniformResourceName::parse(s).ok())
+    .map(|urn| urn.id)
+    .unwrap_or_default();
                 let distance = item.get("memberDistance").and_then(|d| d.get("value")).and_then(|v| v.as_str()).unwrap_or("");
                 
                 results.push(PersonSearchResult {
@@ -285,8 +306,8 @@ impl LinkedinInner {
         Ok(results)
     }
 
-    pub async fn get_company_updates(&self, public_id: Option<&str>, urn_id: Option<&str>, max_results: Option<usize>) -> Result<Vec<Value>, LinkedinError> {
-        let id = public_id.or(urn_id).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or urn_id must be provided".to_string()))?;
+    pub async fn get_company_updates(&self, public_id: Option<&str>, uniform_resource_name: Option<&str>, max_results: Option<usize>) -> Result<Vec<Value>, LinkedinError> {
+        let id = public_id.or(uniform_resource_name).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or uniform_resource_name must be provided".to_string()))?;
         
         let mut results = vec![];
         let mut start = 0;
@@ -314,8 +335,8 @@ impl LinkedinInner {
         Ok(results)
     }
 
-    pub async fn get_profile_updates(&self, public_id: Option<&str>, urn_id: Option<&str>, max_results: Option<usize>) -> Result<Vec<Value>, LinkedinError> {
-        let id = public_id.or(urn_id).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or urn_id must be provided".to_string()))?;
+    pub async fn get_profile_updates(&self, public_id: Option<&str>, uniform_resource_name: Option<&str>, max_results: Option<usize>) -> Result<Vec<Value>, LinkedinError> {
+        let id = public_id.or(uniform_resource_name).ok_or_else(|| LinkedinError::InvalidInput("Either public_id or uniform_resource_name must be provided".to_string()))?;
         
         let mut results = vec![];
         let mut start = 0;
@@ -412,19 +433,18 @@ impl LinkedinInner {
         })
     }
 
-    pub async fn get_conversation_details(&self, profile_urn_id: &str) -> Result<ConversationDetails, LinkedinError> {
-        let res = self.client.get(&format!("/messaging/conversations?keyVersion=LEGACY_INBOX&q=participants&recipients=List({})", profile_urn_id)).await?;
+    pub async fn get_conversation_details(&self, profile_uniform_resource_name: &str) -> Result<ConversationDetails, LinkedinError> {
+        let res = self.client.get(&format!("/messaging/conversations?keyVersion=LEGACY_INBOX&q=participants&recipients=List({})", profile_uniform_resource_name)).await?;
         let data: Value = res.json().await?;
         
         let item = data.get("elements")
             .and_then(|e| e.get(0))
             .ok_or_else(|| LinkedinError::RequestFailed("No conversation found".to_string()))?;
         
-        let entity_urn = item.get("entityUrn")
-            .and_then(|u| u.as_str())
-            .ok_or_else(|| LinkedinError::RequestFailed("No conversation URN found".to_string()))?;
-        
-        let id = get_id_from_urn(entity_urn);
+        let entity_urn = item.get("entityUrn").and_then(|u| u.as_str())
+    .ok_or(LinkedinError::RequestFailed("No entityUrn".into()))?;
+let urn = UniformResourceName::parse(entity_urn)?;
+let id = urn.id;
         
         Ok(ConversationDetails {
             id: id.to_string(),
@@ -440,9 +460,9 @@ impl LinkedinInner {
         if let Some(elements) = data.get("elements").and_then(|e| e.as_array()) {
             for element in elements {
                 if let Some(entity_urn) = element.get("entityUrn").and_then(|u| u.as_str()) {
-                    let id = get_id_from_urn(entity_urn);
+                    let id = UniformResourceName::parse(entity_urn).unwrap().id;
                     conversations.push(Conversation {
-                        id: id.to_string(),
+                        id,
                     });
                 }
             }
@@ -451,17 +471,17 @@ impl LinkedinInner {
         Ok(conversations)
     }
 
-    pub async fn get_conversation(&self, conversation_urn_id: &str) -> Result<Conversation, LinkedinError> {
-        let res = self.client.get(&format!("/messaging/conversations/{}/events", conversation_urn_id)).await?;
+    pub async fn get_conversation(&self, conversation_uniform_resource_name: &str) -> Result<Conversation, LinkedinError> {
+        let res = self.client.get(&format!("/messaging/conversations/{}/events", conversation_uniform_resource_name)).await?;
         let _data: Value = res.json().await?;
         
         Ok(Conversation {
-            id: conversation_urn_id.to_string(),
+            id: conversation_uniform_resource_name.to_string(),
         })
     }
 
-    pub async fn send_message(&self, conversation_urn_id: Option<&str>, recipients: Option<Vec<String>>, message_body: &str) -> Result<bool, LinkedinError> {
-        if conversation_urn_id.is_none() && recipients.is_none() {
+    pub async fn send_message(&self, conversation_uniform_resource_name: Option<&str>, recipients: Option<Vec<String>>, message_body: &str) -> Result<bool, LinkedinError> {
+        if conversation_uniform_resource_name.is_none() && recipients.is_none() {
             return Ok(true); // Error case
         }
         
@@ -485,7 +505,7 @@ impl LinkedinInner {
             }
         });
         
-        let res = if let Some(conv_id) = conversation_urn_id {
+        let res = if let Some(conv_id) = conversation_uniform_resource_name {
             self.client.post(&format!("/messaging/conversations/{}/events?action=create", conv_id), &message_event).await?
         } else if let Some(recips) = recipients {
             let mut payload = message_event;
@@ -505,7 +525,7 @@ impl LinkedinInner {
         Ok(res.status() != 201)
     }
 
-    pub async fn mark_conversation_as_seen(&self, conversation_urn_id: &str) -> Result<bool, LinkedinError> {
+    pub async fn mark_conversation_as_seen(&self, conversation_uniform_resource_name: &str) -> Result<bool, LinkedinError> {
         let payload = json!({
             "patch": {
                 "$set": {
@@ -514,7 +534,7 @@ impl LinkedinInner {
             }
         });
         
-        let res = self.client.post(&format!("/messaging/conversations/{}", conversation_urn_id), &payload).await?;
+        let res = self.client.post(&format!("/messaging/conversations/{}", conversation_uniform_resource_name), &payload).await?;
         Ok(res.status() != 200)
     }
 
@@ -557,15 +577,19 @@ impl LinkedinInner {
     }
 
     pub async fn reply_invitation(&self, invitation_entity_urn: &str, invitation_shared_secret: &str, action: &str) -> Result<bool, LinkedinError> {
-        let invitation_id = get_id_from_urn(invitation_entity_urn);
+                let urn = UniformResourceName::parse(invitation_entity_urn)?;
         
         let payload = json!({
-            "invitationId": invitation_id,
+            "invitationId": urn.id,
             "invitationSharedSecret": invitation_shared_secret,
             "isGenericInvitation": false
         });
         
-        let res = self.client.post(&format!("/relationships/invitations/{}?action={}", invitation_id, action), &payload).await?;
+let invitation_id = urn.id;
+let res = self.client.post(
+    &format!("/relationships/invitations/{}?action={}", invitation_id, action),
+    &payload,
+).await?;
         
         Ok(res.status() == 200)
     }

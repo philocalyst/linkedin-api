@@ -45,7 +45,7 @@ struct UniformResourceName {
 }
 
 impl UniformResourceName {
-    pub fn new(urn: &str) -> Result<Self, LinkedinError> {
+    pub fn parse(urn: &str) -> Result<Self, LinkedinError> {
         let parts: Vec<&str> = urn.split(':').collect();
         if parts.len() < 4 {
             return Err(LinkedinError::InvalidInput(
@@ -59,6 +59,16 @@ impl UniformResourceName {
         let id = parts[3].to_string();
 
         Ok(Self { namespace, id })
+    }
+
+    /// Return the "id" part only, e.g. the ACoAAA… string.
+    pub fn id_str(&self) -> &str {
+        &self.id
+    }
+
+    /// Return the full URN as a string ("urn:li:ns:id").
+    pub fn as_str(&self) -> String {
+        format!("urn:li:{}:{}", self.namespace, self.id)
     }
 }
 
@@ -86,8 +96,8 @@ impl Linkedin {
     }
 
     /// Returns a LinkedIn profile by URN ID.
-    pub async fn get_profile_by_urn(&self, urn_id: &str) -> Result<Profile, LinkedinError> {
-        self.inner.get_profile(None, Some(urn_id)).await
+    pub async fn get_profile_by_urn(&self, urn: &UniformResourceName) -> Result<Profile, LinkedinError> {
+        self.inner.get_profile(None, Some(urn)).await
     }
 
     /// Returns a LinkedIn profile's first degree connections.
@@ -111,8 +121,8 @@ impl Linkedin {
     }
 
     /// Returns a LinkedIn profile's skills by URN ID.
-    pub async fn get_profile_skills_by_urn(&self, urn_id: &str) -> Result<Vec<Skill>, LinkedinError> {
-        self.inner.get_profile_skills(None, Some(urn_id)).await
+    pub async fn get_profile_skills_by_urn(&self, urn: UniformResourceName) -> Result<Vec<Skill>, LinkedinError> {
+        self.inner.get_profile_skills(None, Some(&urn)).await
     }
 
     /// Returns a LinkedIn profile's privacy settings.
