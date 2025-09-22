@@ -55,11 +55,10 @@ impl Client {
         refresh: bool,
     ) -> Result<(), LinkedinError> {
         let url = Url::parse("https://www.linkedin.com")?;
-        if !refresh {
-            if self.load_cookies().is_ok() {
+        if !refresh
+            && self.load_cookies().is_ok() {
                 return Ok(());
             }
-        }
 
         // Request session cookies
         self.request_session_cookies().await?;
@@ -100,7 +99,7 @@ impl Client {
 
         let _res = self
             .client
-            .get(&format!("{}/uas/authenticate", AUTH_BASE_URL))
+            .get(format!("{AUTH_BASE_URL}/uas/authenticate"))
             .headers(headers)
             .send()
             .await?;
@@ -168,7 +167,7 @@ impl Client {
 
     pub async fn get(&self, uri: &str) -> Result<Response, LinkedinError> {
         evade().await;
-        let url = format!("{}{}", API_BASE_URL, uri);
+        let url = format!("{API_BASE_URL}{uri}");
 
         let mut headers = header::HeaderMap::new();
         headers.insert("csrf-token", self.get_jsession_id().parse()?);
@@ -179,7 +178,7 @@ impl Client {
 
     pub async fn post(&self, uri: &str, data: &Value) -> Result<Response, LinkedinError> {
         evade().await;
-        let url = format!("{}{}", API_BASE_URL, uri);
+        let url = format!("{API_BASE_URL}{uri}");
 
         let mut headers = header::HeaderMap::new();
         headers.insert("csrf-token", self.get_jsession_id().parse()?);

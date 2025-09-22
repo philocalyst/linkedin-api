@@ -12,8 +12,8 @@ pub async fn evade() {
 /// Extract ID
 pub(crate) fn get_id_from_urn(urn: Option<UniformResourceName>) -> Option<String> {
     if let Some(secure_urn) = urn {
-        return Some(secure_urn.id);
+        Some(secure_urn.id)
     } else {
-        return None;
+        None
     }
 }

@@ -4,7 +4,6 @@ use urlencoding::encode;
 
 use crate::client::Client;
 use crate::error::LinkedinError;
-use crate::utils::get_id_from_urn;
 use crate::{
     Company, Connection, ContactInfo, Conversation, ConversationDetails, types::Education, types::Experience,
     Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School,
@@ -44,7 +43,7 @@ impl LinkedinInner {
 
         let res = self
             .client
-            .get(&format!("/identity/profiles/{}/profileView", id))
+            .get(&format!("/identity/profiles/{id}/profileView"))
             .await?;
         if res.status() != 200 {
             return Err(LinkedinError::RequestFailed(format!(
@@ -110,7 +109,7 @@ impl LinkedinInner {
 
         let res = self
             .client
-            .get(&format!("/identity/profiles/{}/profileContactInfo", id))
+            .get(&format!("/identity/profiles/{id}/profileContactInfo"))
             .await?;
         let data: Value = res.json().await?;
 
@@ -202,8 +201,7 @@ impl LinkedinInner {
         let res = self
             .client
             .get(&format!(
-                "/identity/profiles/{}/skills?count=100&start=0",
-                id
+                "/identity/profiles/{id}/skills?count=100&start=0"
             ))
             .await?;
         let data: Value = res.json().await?;
@@ -280,7 +278,7 @@ impl LinkedinInner {
 
             let res = self
                 .client
-                .get(&format!("/search/blended?{}", query_string))
+                .get(&format!("/search/blended?{query_string}"))
                 .await?;
             let data: Value = res.json().await?;
 
@@ -327,10 +325,10 @@ impl LinkedinInner {
         let mut filters = vec!["resultType->PEOPLE".to_string()];
 
         if let Some(connection_of) = &params.connection_of {
-            filters.push(format!("connectionOf->{}", connection_of));
+            filters.push(format!("connectionOf->{connection_of}"));
         }
         if let Some(network_depth) = &params.network_depth {
-            filters.push(format!("network->{}", network_depth));
+            filters.push(format!("network->{network_depth}"));
         }
         if let Some(regions) = &params.regions {
             filters.push(format!("geoRegion->{}", regions.join("|")));
@@ -412,10 +410,9 @@ impl LinkedinInner {
         let max_results = max_results.unwrap_or(usize::MAX);
 
         loop {
-            let params = format!("?companyUniversalName={}&q=companyFeedByUniversalName&moduleKey=member-share&count={}&start={}", 
-                id, MAX_UPDATE_COUNT, start);
+            let params = format!("?companyUniversalName={id}&q=companyFeedByUniversalName&moduleKey=member-share&count={MAX_UPDATE_COUNT}&start={start}");
 
-            let res = self.client.get(&format!("/feed/updates{}", params)).await?;
+            let res = self.client.get(&format!("/feed/updates{params}")).await?;
             let data: Value = res.json().await?;
 
             if let Some(elements) = data.get("elements").and_then(|e| e.as_array()) {
@@ -459,11 +456,10 @@ impl LinkedinInner {
 
         loop {
             let params = format!(
-                "?profileId={}&q=memberShareFeed&moduleKey=member-share&count={}&start={}",
-                id, MAX_UPDATE_COUNT, start
+                "?profileId={id}&q=memberShareFeed&moduleKey=member-share&count={MAX_UPDATE_COUNT}&start={start}"
             );
 
-            let res = self.client.get(&format!("/feed/updates{}", params)).await?;
+            let res = self.client.get(&format!("/feed/updates{params}")).await?;
             let data: Value = res.json().await?;
 
             if let Some(elements) = data.get("elements").and_then(|e| e.as_array()) {
@@ -512,11 +508,11 @@ impl LinkedinInner {
     }
 
     pub async fn get_school(&self, public_id: &str) -> Result<School, LinkedinError> {
-        let params = format!("?decorationId=com.linkedin.voyager.deco.organization.web.WebFullCompanyMain-12&q=universalName&universalName={}", public_id);
+        let params = format!("?decorationId=com.linkedin.voyager.deco.organization.web.WebFullCompanyMain-12&q=universalName&universalName={public_id}");
 
         let res = self
             .client
-            .get(&format!("/organization/companies{}", params))
+            .get(&format!("/organization/companies{params}"))
             .await?;
         let data: Value = res.json().await?;
 
@@ -544,11 +540,11 @@ impl LinkedinInner {
     }
 
     pub async fn get_company(&self, public_id: &str) -> Result<Company, LinkedinError> {
-        let params = format!("?decorationId=com.linkedin.voyager.deco.organization.web.WebFullCompanyMain-12&q=universalName&universalName={}", public_id);
+        let params = format!("?decorationId=com.linkedin.voyager.deco.organization.web.WebFullCompanyMain-12&q=universalName&universalName={public_id}");
 
         let res = self
             .client
-            .get(&format!("/organization/companies{}", params))
+            .get(&format!("/organization/companies{params}"))
             .await?;
         let data: Value = res.json().await?;
 
@@ -583,7 +579,7 @@ impl LinkedinInner {
         &self,
         profile_uniform_resource_name: &str,
     ) -> Result<ConversationDetails, LinkedinError> {
-        let res = self.client.get(&format!("/messaging/conversations?keyVersion=LEGACY_INBOX&q=participants&recipients=List({})", profile_uniform_resource_name)).await?;
+        let res = self.client.get(&format!("/messaging/conversations?keyVersion=LEGACY_INBOX&q=participants&recipients=List({profile_uniform_resource_name})")).await?;
         let data: Value = res.json().await?;
 
         let item = data
@@ -629,8 +625,7 @@ impl LinkedinInner {
         let res = self
             .client
             .get(&format!(
-                "/messaging/conversations/{}/events",
-                conversation_uniform_resource_name
+                "/messaging/conversations/{conversation_uniform_resource_name}/events"
             ))
             .await?;
         let _data: Value = res.json().await?;
@@ -673,7 +668,7 @@ impl LinkedinInner {
         let res = if let Some(conv_id) = conversation_uniform_resource_name {
             self.client
                 .post(
-                    &format!("/messaging/conversations/{}/events?action=create", conv_id),
+                    &format!("/messaging/conversations/{conv_id}/events?action=create"),
                     &message_event,
                 )
                 .await?
@@ -713,8 +708,7 @@ impl LinkedinInner {
             .client
             .post(
                 &format!(
-                    "/messaging/conversations/{}",
-                    conversation_uniform_resource_name
+                    "/messaging/conversations/{conversation_uniform_resource_name}"
                 ),
                 &payload,
             )
@@ -734,13 +728,12 @@ impl LinkedinInner {
         limit: usize,
     ) -> Result<Vec<Invitation>, LinkedinError> {
         let params = format!(
-            "?start={}&count={}&includeInsights=true&q=receivedInvitation",
-            start, limit
+            "?start={start}&count={limit}&includeInsights=true&q=receivedInvitation"
         );
 
         let res = self
             .client
-            .get(&format!("/relationships/invitationViews{}", params))
+            .get(&format!("/relationships/invitationViews{params}"))
             .await?;
 
         if res.status() != 200 {
@@ -789,8 +782,7 @@ impl LinkedinInner {
             .client
             .post(
                 &format!(
-                    "/relationships/invitations/{}?action={}",
-                    invitation_id, action
+                    "/relationships/invitations/{invitation_id}?action={action}"
                 ),
                 &payload,
             )
@@ -804,8 +796,7 @@ impl LinkedinInner {
             .client
             .post(
                 &format!(
-                    "/identity/profiles/{}/profileActions?action=disconnect",
-                    public_profile_id
+                    "/identity/profiles/{public_profile_id}/profileActions?action=disconnect"
                 ),
                 &json!({}),
             )
@@ -821,8 +812,7 @@ impl LinkedinInner {
         let res = self
             .client
             .get(&format!(
-                "/identity/profiles/{}/privacySettings",
-                public_profile_id
+                "/identity/profiles/{public_profile_id}/privacySettings"
             ))
             .await?;
 
@@ -849,8 +839,7 @@ impl LinkedinInner {
         let res = self
             .client
             .get(&format!(
-                "/identity/profiles/{}/memberBadges",
-                public_profile_id
+                "/identity/profiles/{public_profile_id}/memberBadges"
             ))
             .await?;
 
@@ -895,8 +884,7 @@ impl LinkedinInner {
         let res = self
             .client
             .get(&format!(
-                "/identity/profiles/{}/networkinfo",
-                public_profile_id
+                "/identity/profiles/{public_profile_id}/networkinfo"
             ))
             .await?;
 
@@ -923,10 +911,10 @@ impl LinkedinInner {
     ) -> Result<Value, LinkedinError> {
         let encoded_query = encode(query);
 
-        let mut url = format!("/search/hits?count={}&guides=List%28v-%253EPEOPLE%29&keywords={}&origin=SWITCH_SEARCH_VERTICAL&q=guided", count, encoded_query);
+        let mut url = format!("/search/hits?count={count}&guides=List%28v-%253EPEOPLE%29&keywords={encoded_query}&origin=SWITCH_SEARCH_VERTICAL&q=guided");
 
         if start > 0 {
-            url.push_str(&format!("&start={}", start));
+            url.push_str(&format!("&start={start}"));
         }
 
         let res = self.client.get(&url).await?;

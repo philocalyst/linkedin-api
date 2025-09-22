@@ -50,8 +50,7 @@ impl UniformResourceName {
         let parts: Vec<&str> = urn.split(':').collect();
         if parts.len() < 4 {
             return Err(LinkedinError::InvalidInput(format!(
-                "Not enough components in URN: {}",
-                urn
+                "Not enough components in URN: {urn}"
             )));
         }
 
