@@ -57,45 +57,7 @@ impl Client {
         self.cookie_jar.add_cookie_str(&format!("li_at={}; Domain=.linkedin.com; Path=/; Secure; HttpOnly", identity.authentication_token), &url);
         self.cookie_jar.add_cookie_str(&format!("JSESSIONID={}; Domain=.linkedin.com; Path=/; Secure; HttpOnly", identity.session_cookie), &url);
 
-        let mut form = std::collections::HashMap::new();
-        form.insert("session_key", &identity.username);
-        form.insert("session_password", &identity.password);
-        
-        let jsession_id = self.get_jsession_id();
-        form.insert("JSESSIONID", &jsession_id);
-
-        let mut headers = header::HeaderMap::new();
-        headers.insert("X-Li-User-Agent", "LIAuthLibrary:3.2.4 com.linkedin.LinkedIn:8.8.1 iPhone:8.3".parse()?);
-        headers.insert("User-Agent", "LinkedIn/8.8.1 CFNetwork/711.3.18 Darwin/14.0.0".parse()?);
-        headers.insert("X-User-Language", "en".parse()?);
-        headers.insert("X-User-Locale", "en_US".parse()?);
-        headers.insert("Accept-Language", "en-us".parse()?);
-
-        let res = self.client.post(&format!("{}/uas/authenticate", AUTH_BASE_URL))
-            .headers(headers)
-            .form(&form)
-            .send()
-            .await?;
-
-        dbg!(&res);
-        if res.status() == 401 {
-            return Err(LinkedinError::Unauthorized("Authentication failed".to_string()));
-        }
-
-        if res.status() != 200 {
-            return Err(LinkedinError::RequestFailed(format!("Authentication request failed with status: {}", res.status())));
-        }
-
-        let data: Value = res.json().await?;
-
-        if let Some(login_result) = data.get("login_result") {
-            if login_result != "PASS" {
-                return Err(LinkedinError::Challenge(login_result.as_str().unwrap_or("Unknown").to_string()));
-            }
-        }
-
         self.save_cookies()?;
-        self.set_csrf_token();
 
         Ok(())
     }
@@ -127,11 +89,6 @@ impl Client {
             }
         }
         String::new()
-    }
-
-    fn set_csrf_token(&self) {
-        // The csrf-token header is set to the JSESSIONID value
-        // This would need to be handled per request in a real implementation
     }
 
     fn load_cookies(&self) -> Result<(), LinkedinError> {

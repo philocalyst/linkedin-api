@@ -40,8 +40,6 @@ pub struct Linkedin {
 }
 
 pub struct Identity {
-    pub username: String,
-    pub password: String,
     pub authentication_token: String,
     pub session_cookie: String,
 }

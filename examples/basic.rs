@@ -3,10 +3,7 @@ use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), LinkedinError> {
-    let username = env::var("LINKEDIN_USERNAME").unwrap_or_else(|_| panic!("Missing env var"));
-    let password = env::var("LINKEDIN_PASSWORD").unwrap_or_else(|_| panic!("Missing env var"));
-
-    let input = Identity  { username, password, authentication_token: String::from("AQEDAUEPdx8FJo2CAAABmXMEsS0AAAGZlxE1LU4Aclty_bQmV4p4VWnlBVAerIOntfpKC8rMVg107RrypH6OLlgHUK0PqJ5Nssev_4lzITN-GptrMsPInTcSfuKKQwQAqJNEjhM9sWywSaYzvoobkkoc"), session_cookie: String::from("ajax:8702309092900260000") };
+    let input = Identity  { authentication_token: String::from("AQEDAUEPdx8FJo2CAAABmXMEsS0AAAGZlxE1LU4Aclty_bQmV4p4VWnlBVAerIOntfpKC8rMVg107RrypH6OLlgHUK0PqJ5Nssev_4lzITN-GptrMsPInTcSfuKKQwQAqJNEjhM9sWywSaYzvoobkkoc"), session_cookie: String::from("ajax:8702309092900260000") };
 
     let api = Linkedin::new(&input, false).await?;
 
