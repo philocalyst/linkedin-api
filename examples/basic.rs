@@ -1,5 +1,4 @@
 use linkedin_api::{types::Identity, Linkedin, LinkedinError};
-use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), LinkedinError> {
