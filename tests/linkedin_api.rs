@@ -1,5 +1,5 @@
-use linkedin_api::{Linkedin, LinkedinError };
 use linkedin_api::types::{Identity, SearchPeopleParams};
+use linkedin_api::{Linkedin, LinkedinError};
 use std::env;
 
 fn get_test_credentials() -> (Identity, String, String) {
@@ -8,7 +8,10 @@ fn get_test_credentials() -> (Identity, String, String) {
     let profile_id = env::var("TEST_PROFILE_ID").expect("TEST_PROFILE_ID not set");
     let conversation_id = env::var("TEST_CONVERSATION_ID").expect("TEST_CONVERSATION_ID not set");
 
-    let id = Identity { authentication_token: li_at, session_cookie: jsession_id };
+    let id = Identity {
+        authentication_token: li_at,
+        session_cookie: jsession_id,
+    };
 
     (id, profile_id, conversation_id)
 }
@@ -16,7 +19,7 @@ fn get_test_credentials() -> (Identity, String, String) {
 #[tokio::test]
 async fn test_get_profile() -> Result<(), LinkedinError> {
     let (identity, profile_id, _) = get_test_credentials();
-    let api = Linkedin::new(&identity, true).await?; 
+    let api = Linkedin::new(&identity, true).await?;
     let profile = api.get_profile(&profile_id).await?;
 
     assert!(!profile.profile_id.is_empty());
