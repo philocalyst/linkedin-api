@@ -24,7 +24,7 @@ pub struct SearchPeopleParams {
 }
 
 /// Strongly-typed struct for profiles.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
     #[serde(rename = "entityUrn")]
@@ -83,7 +83,7 @@ pub struct Profile {
     pub skills: Vec<Skill>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BirthDate {
     pub day: Option<u32>,
@@ -91,27 +91,27 @@ pub struct BirthDate {
     pub year: Option<u32>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Locale {
     pub country: Option<String>,
     pub language: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Location {
     pub basic_location: Option<BasicLocation>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BasicLocation {
     pub country_code: Option<String>,
     pub postal_code: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MiniProfile {
     #[serde(rename = "dashEntityUrn")]
@@ -128,7 +128,7 @@ pub struct MiniProfile {
     pub picture: Option<VectorImageContainer>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfilePicture {
     pub display_image: Option<String>,
@@ -136,7 +136,7 @@ pub struct ProfilePicture {
     pub photo_filter_edit_info: Option<PhotoFilterEditInfo>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PhotoFilterEditInfo {
     pub top_left: Option<Point>,
@@ -150,28 +150,28 @@ pub struct PhotoFilterEditInfo {
     pub photo_filter_type: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Point {
     pub x: f32,
     pub y: f32,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorImageContainer {
     #[serde(rename = "com.linkedin.common.VectorImage")]
     pub vector_image: Option<VectorImage>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorImage {
     pub root_url: Option<String>,
     pub artifacts: Vec<ImageArtifact>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ImageArtifact {
     pub height: u32,
@@ -181,7 +181,7 @@ pub struct ImageArtifact {
 }
 
 /// An experience entry
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Experience {
     pub title: Option<String>,
@@ -193,7 +193,7 @@ pub struct Experience {
 }
 
 /// An education entry
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Education {
     pub school_name: Option<String>,
@@ -202,7 +202,7 @@ pub struct Education {
 }
 
 /// A skill entry
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Skill {
     pub name: String,
