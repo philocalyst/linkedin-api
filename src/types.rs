@@ -25,7 +25,6 @@ pub struct LinkedInProfileView {
     pub certification_view: CertificationView,
     pub course_view: CourseView,
     pub education_view: EducationView,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub honor_view: HonorView,
     pub language_view: LanguageView,
@@ -97,7 +96,6 @@ impl<'de> Deserialize<'de> for Address {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: Option<String>,
 
     pub first_name: Option<String>,
@@ -106,42 +104,31 @@ pub struct Profile {
     pub summary: Option<String>,
 
     pub industry_name: Option<String>,
-    #[serde(rename = "industryUrn")]
     pub industry_urn: Option<String>,
 
     pub geo_country_name: Option<String>,
-    #[serde(rename = "geoCountryUrn")]
     pub geo_country_urn: Option<String>,
-    #[serde(rename = "geoLocationName")]
     pub geo_location_name: Option<String>,
-    #[serde(rename = "geoLocationBackfilled")]
     pub geo_location_backfilled: Option<bool>,
-    #[serde(rename = "geoLocation")]
     pub geo_location: Option<GeoLocation>,
 
     pub address: Option<Address>,
-    #[serde(rename = "birthDate")]
     pub birth_date: Option<BirthDate>,
 
     pub default_locale: Option<Locale>,
     pub supported_locales: Option<Vec<Locale>>,
 
     pub location: Option<Location>,
-    #[serde(rename = "locationName")]
     pub location_name: Option<String>,
 
-    #[serde(rename = "miniProfile")]
     pub mini_profile: Option<MiniProfile>,
     pub profile_picture: Option<ProfilePicture>,
-    #[serde(rename = "profilePictureOriginalImage")]
     pub profile_picture_original_image: Option<VectorImageContainer>,
 
-    #[serde(rename = "showEducationOnProfileTopCard")]
     pub show_education_on_profile_top_card: Option<bool>,
     pub student: Option<bool>,
     pub elt: Option<bool>,
 
-    #[serde(rename = "versionTag")]
     pub version_tag: Option<String>,
 
     #[serde(skip)]
@@ -205,7 +192,6 @@ impl Profile {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GeoLocation {
-    #[serde(rename = "geoUrn")]
     pub geo_urn: Option<String>,
     pub postal_code: Option<String>,
 }
@@ -243,7 +229,6 @@ pub struct Paging {
 #[serde(rename_all = "camelCase")]
 pub struct CertificationView {
     pub elements: Vec<Certification>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -252,7 +237,6 @@ pub struct CertificationView {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Certification {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub name: String,
     pub authority: Option<String>,
@@ -266,7 +250,6 @@ pub struct Certification {
 #[serde(rename_all = "camelCase")]
 pub struct CourseView {
     pub elements: Vec<Course>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -274,7 +257,6 @@ pub struct CourseView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Course {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub name: String,
     pub number: Option<String>,
@@ -285,7 +267,6 @@ pub struct Course {
 #[serde(rename_all = "camelCase")]
 pub struct HonorView {
     pub elements: Vec<Honor>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -294,7 +275,6 @@ pub struct HonorView {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Honor {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub title: String,
     pub issuer: Option<String>,
@@ -308,7 +288,6 @@ pub struct Honor {
 #[serde(rename_all = "camelCase")]
 pub struct LanguageView {
     pub elements: Vec<Language>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -316,7 +295,6 @@ pub struct LanguageView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Language {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub name: String,
     pub proficiency: LanguageProficiency,
@@ -340,20 +318,14 @@ pub enum LanguageProficiency {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Experience {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: Option<String>,
     pub title: Option<String>,
-    #[serde(rename = "companyName")]
     pub company_name: Option<String>,
-    #[serde(rename = "companyUrn")]
     pub company_urn: Option<String>,
     pub company: Option<CompanyInfo>,
     pub description: Option<String>,
-    #[serde(rename = "timePeriod")]
     pub time_period: Option<TimePeriod>,
-    #[serde(rename = "geoLocationName")]
     pub geo_location_name: Option<String>,
-    #[serde(rename = "geoUrn")]
     pub geo_urn: Option<String>,
     pub location_name: Option<String>,
     pub region: Option<String>,
@@ -414,7 +386,6 @@ pub struct EmployeeCountRange {
 pub struct MiniCompany {
     pub active: bool,
     pub dash_company_urn: Option<String>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub logo: Option<VectorImageContainer>,
     pub name: String,
@@ -428,7 +399,6 @@ pub struct MiniCompany {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Education {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub school_name: Option<String>,
     pub school_urn: Option<String>,
@@ -496,7 +466,6 @@ impl Education {
 #[serde(rename_all = "camelCase")]
 pub struct SchoolInfo {
     pub active: bool,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub logo: Option<VectorImageContainer>,
     pub object_urn: String,
@@ -509,7 +478,6 @@ pub struct SchoolInfo {
 #[serde(rename_all = "camelCase")]
 pub struct TestScoreView {
     pub elements: Vec<TestScore>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -518,7 +486,6 @@ pub struct TestScoreView {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TestScore {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub name: String,
     pub score: String,
@@ -530,11 +497,9 @@ pub struct TestScore {
 /// Enhanced Contact Info with strong typing
 #[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ContactInfo {
-    #[serde(rename = "emailAddress")]
     pub email_address: Option<EmailAddress>,
     pub websites: Vec<Website>,
     pub twitter: Vec<String>,
-    #[serde(rename = "phoneNumbers")]
     pub phone_numbers: Vec<PhoneNumber>,
     pub birthdate: Option<BirthDate>,
     pub ims: Option<Vec<Value>>,
@@ -551,24 +516,19 @@ pub struct Website {
 #[serde(rename_all = "camelCase")]
 pub struct PositionGroupView {
     pub elements: Vec<PositionGroup>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
-    #[serde(rename = "profileId")]
     pub profile_id: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PositionGroup {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub name: String,
-    #[serde(rename = "miniCompany")]
     pub mini_company: Option<MiniCompany>,
     pub paging: Paging,
     pub positions: Vec<Experience>,
-    #[serde(rename = "timePeriod")]
     pub time_period: Option<TimePeriod>,
     pub region: Option<String>,
 }
@@ -578,7 +538,6 @@ pub struct PositionGroup {
 #[serde(rename_all = "camelCase")]
 pub struct PositionView {
     pub elements: Vec<Experience>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -589,7 +548,6 @@ pub struct PositionView {
 #[serde(rename_all = "camelCase")]
 pub struct EducationView {
     pub elements: Vec<Education>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -600,7 +558,6 @@ pub struct EducationView {
 #[serde(rename_all = "camelCase")]
 pub struct SkillView {
     pub elements: Vec<Skill>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -608,7 +565,6 @@ pub struct SkillView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Skill {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub name: String,
 }
@@ -618,7 +574,6 @@ pub struct Skill {
 #[serde(rename_all = "camelCase")]
 pub struct VolunteerExperienceView {
     pub elements: Vec<VolunteerExperience>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -627,7 +582,6 @@ pub struct VolunteerExperienceView {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VolunteerExperience {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub role: String,
     pub company_name: Option<String>,
@@ -644,7 +598,6 @@ pub struct VolunteerExperience {
 #[serde(rename_all = "camelCase")]
 pub struct VolunteerCauseView {
     pub elements: Vec<VolunteerCause>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -662,10 +615,8 @@ pub struct VolunteerCause {
 #[serde(rename_all = "camelCase")]
 pub struct OrganizationView {
     pub elements: Vec<Value>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
-    #[serde(rename = "profileId")]
     pub profile_id: String,
 }
 
@@ -673,7 +624,6 @@ pub struct OrganizationView {
 #[serde(rename_all = "camelCase")]
 pub struct PatentView {
     pub elements: Vec<Value>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -683,7 +633,6 @@ pub struct PatentView {
 #[serde(rename_all = "camelCase")]
 pub struct ProjectView {
     pub elements: Vec<Value>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -693,7 +642,6 @@ pub struct ProjectView {
 #[serde(rename_all = "camelCase")]
 pub struct PublicationView {
     pub elements: Vec<Value>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
     pub paging: Paging,
     pub profile_id: String,
@@ -715,11 +663,8 @@ pub struct BasicLocation {
 #[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MiniProfile {
-    #[serde(rename = "dashEntityUrn")]
     pub dash_entity_urn: Option<String>,
-    #[serde(rename = "entityUrn")]
     pub entity_urn: Option<String>,
-    #[serde(rename = "objectUrn")]
     pub object_urn: Option<String>,
     pub public_identifier: Option<String>,
     pub first_name: Option<String>,
@@ -761,7 +706,6 @@ pub struct Point {
 #[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorImageContainer {
-    #[serde(rename = "com.linkedin.common.VectorImage")]
     pub vector_image: Option<VectorImage>,
 }
 
@@ -783,9 +727,7 @@ pub struct ImageArtifact {
 
 #[derive(Debug, PartialEq, Serialize, Clone, Deserialize)]
 pub struct TimePeriod {
-    #[serde(rename = "startDate")]
     pub start_date: YearMonth,
-    #[serde(rename = "endDate")]
     pub end_date: Option<YearMonth>,
 }
 
@@ -880,35 +822,27 @@ impl<'de> Deserialize<'de> for YearMonth {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Connection {
-    #[serde(rename = "urnId")]
     pub urn_id: String,
-    #[serde(rename = "publicId")]
     pub public_id: String,
     pub distance: String,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemberBadges {
     pub premium: bool,
-    #[serde(rename = "openLink")]
     pub open_link: bool,
     pub influencer: bool,
-    #[serde(rename = "jobSeeker")]
     pub job_seeker: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PersonSearchResult {
-    #[serde(rename = "entityUrn")]
     pub urn_id: String,
-    #[serde(rename = "publicId")]
     pub public_id: String,
     pub distance: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Invitation {
-    #[serde(rename = "entityUrn")]
     pub entity_urn: String,
-    #[serde(rename = "sharedSecret")]
     pub shared_secret: String,
 }
 
