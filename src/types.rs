@@ -116,9 +116,11 @@ pub struct Profile {
     pub geo_location_name: Option<String>,
     #[serde(rename = "geoLocationBackfilled")]
     pub geo_location_backfilled: Option<bool>,
+    #[serde(rename = "geoLocation")]
     pub geo_location: Option<GeoLocation>,
 
     pub address: Option<Address>,
+    #[serde(rename = "birthDate")]
     pub birth_date: Option<BirthDate>,
 
     pub default_locale: Option<Locale>,
@@ -141,6 +143,21 @@ pub struct Profile {
 
     #[serde(rename = "versionTag")]
     pub version_tag: Option<String>,
+
+    #[serde(skip)]
+    pub profile_id: String,
+
+    #[serde(skip)]
+    pub experience: Vec<Experience>,
+
+    #[serde(skip)]
+    pub education: Vec<Education>,
+
+    #[serde(skip)]
+    pub skills: Vec<Skill>,
+
+    #[serde(skip)]
+    pub contact: ContactInfo,
 }
 
 impl Profile {
@@ -511,7 +528,7 @@ pub struct TestScore {
 }
 
 /// Enhanced Contact Info with strong typing
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ContactInfo {
     #[serde(rename = "emailAddress")]
     pub email_address: Option<EmailAddress>,
