@@ -1,6 +1,6 @@
 [package]
 name = "linkedin-api"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 description = "Rust Wrapper for the LinkedIn API"
 license = "AGPL-3.0-or-later"

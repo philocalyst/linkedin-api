@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] – 2025-09-26
+
+### Added
+  * **Profiles** now include **contact information** by default when fetching a profile.
+      * This includes the new `ContactInfo` struct, which is added to the `Profile` struct.
+      * Updated the internal `get_profile_contact_info` function to correctly handle both `public_id` and `UniformResourceName` as input.
+      * The `get_profile_contact_info_by_urn` function now correctly accepts a `&UniformResourceName` as an argument.
+  * **Experience** entries now include a `role` and detailed `time_period` structure.
+      * This required adding the `TimePeriod` and `YearMonth` structs with custom serialization/deserialization logic to correctly handle the time data.
+  * The **`time` crate** dependency was added with the `["serde"]` feature to support the new time-related data structures.
+  * The `UniformResourceName` struct's visibility was changed from crate-private (`pub(crate)`) to **public** (`pub`).
+
+### Changed
+  * Minor refactoring for cleaner string formatting in internal API calls (removed verbose `&format!(...)` in a few places in `src/linkedin.rs`).
+
 ## [0.2.1] - 2025-09-26
+
 ### Fixed
 - The visibility on internal methods
 
@@ -29,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added 
 - Implemented `PartialEq` for profile-related data structures to allow for direct comparison.
 
-[Unreleased]: https://github.com/philocalyst/infat/compare/v0.2.1…HEAD
-[0.2.1]: https://github.com/philocalyst/infat/compare/v0.2.0...v0.2.1 
-[0.2.0]: https://github.com/philocalyst/infat/compare/v0.1.0...v0.2.0 
-[0.1.0]: https://github.com/philocalyst/infat/compare/v0.1.0... (Comparing against the start of the project)
+[Unreleased]: https://github.com/philocalyst/linkedin-api/compare/v0.3.0…HEAD
+[0.3.0]: https://github.com/philocalyst/linkedin-api/compare/v0.2.1...v0.3.0 
+[0.2.1]: https://github.com/philocalyst/linkedin-api/compare/v0.2.0...v0.2.1 
+[0.2.0]: https://github.com/philocalyst/linkedin-api/compare/v0.1.0...v0.2.0 
+[0.1.0]: https://github.com/philocalyst/linkedin-api/compare/v0.1.0... (Comparing against the start of the project)
