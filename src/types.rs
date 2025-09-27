@@ -288,7 +288,7 @@ pub(crate) struct UniformResourceName {
 }
 impl Profile {
     /// Helper method to get full name
-    fn get_full_name(&self) -> Option<String> {
+    pub fn get_full_name(&self) -> Option<String> {
         match (&self.first_name, &self.last_name) {
             (Some(first), Some(last)) => Some(format!("{} {}", first, last)),
             (Some(first), None) => Some(first.clone()),
@@ -298,7 +298,7 @@ impl Profile {
     }
 
     /// Helper method to get profile image URL
-    fn get_profile_image(&self) -> Option<Url> {
+    pub fn get_profile_image(&self) -> Option<Url> {
         self.profile_picture_original_image
             .as_ref()
             .and_then(|container| container.vector_image.as_ref())
