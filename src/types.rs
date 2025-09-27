@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use email_address::EmailAddress;
 use isolang;
 use my_country::Country;
@@ -824,4 +826,46 @@ pub struct Invitation {
 pub struct UniformResourceName {
     pub namespace: String, // the context of the id
     pub id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NetworkInfo {
+    pub followers_count: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct School {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Company {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Conversation {
+    pub id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConversationDetails {
+    pub id: String,
+}
+
+/// Parameters for people search.
+#[derive(Debug, Clone, Default)]
+pub struct SearchPeopleParams {
+    pub keywords: Option<String>,
+    pub connection_of: Option<String>,
+    pub network_depth: Option<String>,
+    pub current_company: Option<Vec<String>>,
+    pub past_companies: Option<Vec<String>>,
+    pub nonprofit_interests: Option<Vec<String>>,
+    pub profile_languages: Option<Vec<String>>,
+    pub regions: Option<Vec<String>>,
+    pub industries: Option<Vec<String>>,
+    pub schools: Option<Vec<String>>,
+    pub include_private_profiles: bool,
+    pub limit: Option<usize>,
 }
