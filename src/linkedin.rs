@@ -5,9 +5,9 @@ use urlencoding::encode;
 use crate::client::Client;
 use crate::error::LinkedinError;
 use crate::{
-    Company, Connection, ContactInfo, Conversation, ConversationDetails, types::Education, types::Experience,
-    Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School,
-    SearchPeopleParams, Skill, UniformResourceName,
+    types::Education, types::Experience, Company, Connection, ContactInfo, Conversation,
+    ConversationDetails, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult,
+    Profile, School, SearchPeopleParams, Skill, UniformResourceName,
 };
 
 const MAX_UPDATE_COUNT: usize = 100;
@@ -53,6 +53,7 @@ impl LinkedinInner {
         }
 
         let data: serde_json::Value = res.json().await?;
+
         let profile_val = data
             .get("profile")
             .ok_or_else(|| LinkedinError::RequestFailed("No 'profile' key".into()))?
@@ -93,19 +94,26 @@ impl LinkedinInner {
         // Fill in skills (separate endpoint)
         profile.skills = self.get_profile_skills(public_id, urn).await?;
 
+        // Fill in contact info (separate endpoint)
+        profile.contact = self.get_profile_contact_info(public_id, urn).await?;
+
         Ok(profile)
     }
 
     pub async fn get_profile_contact_info(
         &self,
         public_id: Option<&str>,
-        uniform_resource_name: Option<&str>,
+        uniform_resource_name: Option<&UniformResourceName>,
     ) -> Result<ContactInfo, LinkedinError> {
-        let id = public_id.or(uniform_resource_name).ok_or_else(|| {
-            LinkedinError::InvalidInput(
-                "Either public_id or uniform_resource_name must be provided".to_string(),
-            )
-        })?;
+        let id = if let Some(pid) = public_id {
+            pid.to_string() // use raw string
+        } else if let Some(urn) = uniform_resource_name {
+            urn.id.clone() // use strong type's .id
+        } else {
+            return Err(LinkedinError::InvalidInput(
+                "Either public_id or uniform_resource_name must be provided".into(),
+            ));
+        };
 
         let res = self
             .client
@@ -200,10 +208,9 @@ impl LinkedinInner {
 
         let res = self
             .client
-            .get(&format!(
-                "/identity/profiles/{id}/skills?count=100&start=0"
-            ))
+            .get(&format!("/identity/profiles/{id}/skills?count=100&start=0"))
             .await?;
+
         let data: Value = res.json().await?;
 
         let mut skills = vec![];
@@ -707,9 +714,7 @@ impl LinkedinInner {
         let res = self
             .client
             .post(
-                &format!(
-                    "/messaging/conversations/{conversation_uniform_resource_name}"
-                ),
+                &format!("/messaging/conversations/{conversation_uniform_resource_name}"),
                 &payload,
             )
             .await?;
@@ -727,9 +732,8 @@ impl LinkedinInner {
         start: usize,
         limit: usize,
     ) -> Result<Vec<Invitation>, LinkedinError> {
-        let params = format!(
-            "?start={start}&count={limit}&includeInsights=true&q=receivedInvitation"
-        );
+        let params =
+            format!("?start={start}&count={limit}&includeInsights=true&q=receivedInvitation");
 
         let res = self
             .client
@@ -781,9 +785,7 @@ impl LinkedinInner {
         let res = self
             .client
             .post(
-                &format!(
-                    "/relationships/invitations/{invitation_id}?action={action}"
-                ),
+                &format!("/relationships/invitations/{invitation_id}?action={action}"),
                 &payload,
             )
             .await?;
@@ -795,9 +797,7 @@ impl LinkedinInner {
         let res = self
             .client
             .post(
-                &format!(
-                    "/identity/profiles/{public_profile_id}/profileActions?action=disconnect"
-                ),
+                &format!("/identity/profiles/{public_profile_id}/profileActions?action=disconnect"),
                 &json!({}),
             )
             .await?;
