@@ -753,53 +753,6 @@ pub struct TimePeriod {
     pub end_date: Option<YearMonth>,
 }
 
-impl TimePeriod {
-    /// Calculate duration in months (approximate)
-    pub fn duration_months(&self) -> Option<u32> {
-        let start = &self.start_date;
-        let now = &YearMonth {
-            year: time::OffsetDateTime::now_utc().year(),
-            month: time::OffsetDateTime::now_utc().month(),
-        };
-        let end = self.end_date.as_ref().unwrap_or(now);
-
-        let months =
-            (end.year - start.year) * 12 + (end.month as u8 as i32 - start.month as u8 as i32);
-        Some(months.max(1) as u32)
-    }
-
-    /// Format as human-readable duration
-    pub fn duration_string(&self) -> String {
-        match self.duration_months() {
-            Some(months) if months < 12 => {
-                if months == 1 {
-                    "1 month".to_string()
-                } else {
-                    format!("{} months", months)
-                }
-            }
-            Some(months) => {
-                let years = months / 12;
-                let remaining_months = months % 12;
-                if remaining_months == 0 {
-                    if years == 1 {
-                        "1 year".to_string()
-                    } else {
-                        format!("{} years", years)
-                    }
-                } else {
-                    if years == 1 {
-                        format!("1 year {} months", remaining_months)
-                    } else {
-                        format!("{} years {} months", years, remaining_months)
-                    }
-                }
-            }
-            None => "Unknown duration".to_string(),
-        }
-    }
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct YearMonth {
     pub year: i32,
