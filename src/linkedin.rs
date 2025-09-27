@@ -1,5 +1,7 @@
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::fs::write;
+use url::Url;
 use urlencoding::encode;
 
 use crate::client::Client;
@@ -119,20 +121,23 @@ impl LinkedinInner {
             .client
             .get(&format!("/identity/profiles/{id}/profileContactInfo"))
             .await?;
+
         let data: Value = res.json().await?;
 
         let mut contact_info = ContactInfo {
             email_address: data
                 .get("emailAddress")
                 .and_then(|e| e.as_str())
-                .map(|s| s.to_string()),
+                .map(|s| s.parse().unwrap()),
+
             websites: vec![],
             twitter: vec![],
             phone_numbers: vec![],
             birthdate: data
                 .get("birthDateOn")
                 .and_then(|b| b.as_str())
-                .map(|s| s.to_string()),
+                .map(|s| s.parse().unwrap()),
+
             ims: data.get("ims").map(|i| vec![i.clone()]),
         };
 
@@ -140,11 +145,14 @@ impl LinkedinInner {
         if let Some(websites) = data.get("websites").and_then(|w| w.as_array()) {
             for website in websites {
                 let mut site = crate::types::Website {
-                    url: website
-                        .get("url")
-                        .and_then(|u| u.as_str())
-                        .unwrap_or("")
-                        .to_string(),
+                    url: Some(
+                        website
+                            .get("url")
+                            .and_then(|u| u.as_str())
+                            .unwrap_or_default()
+                            .parse()
+                            .unwrap(),
+                    ),
                     label: None,
                 };
 
@@ -183,7 +191,7 @@ impl LinkedinInner {
         if let Some(phone_numbers) = data.get("phoneNumbers").and_then(|p| p.as_array()) {
             for phone in phone_numbers {
                 if let Some(number) = phone.get("number").and_then(|n| n.as_str()) {
-                    contact_info.phone_numbers.push(number.to_string());
+                    contact_info.phone_numbers.push(number.parse().unwrap());
                 }
             }
         }
@@ -219,6 +227,7 @@ impl LinkedinInner {
             for element in elements {
                 if let Some(name) = element.get("name").and_then(|n| n.as_str()) {
                     skills.push(Skill {
+                        entity_urn: "".to_string(),
                         name: name.to_string(),
                     });
                 }
