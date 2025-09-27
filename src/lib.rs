@@ -25,13 +25,14 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 pub use crate::error::LinkedinError;
+use crate::types::SearchPeopleParams;
 use crate::{
     linkedin::LinkedinInner,
     types::{
-        Company, Connection, ContactInfo, Conversation, ConversationDetails, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, Skill, UniformResourceName
+        Company, Connection, ContactInfo, Conversation, ConversationDetails, Identity, Invitation,
+        MemberBadges, NetworkInfo, PersonSearchResult, Profile, School, Skill, UniformResourceName,
     },
 };
-use crate::types::SearchPeopleParams;
 
 pub mod client;
 pub mod error;
@@ -79,7 +80,6 @@ impl AsRef<str> for UniformResourceName {
     }
 }
 
-
 impl Linkedin {
     /// Create a new LinkedIn client and authenticate.
     pub async fn new(identity: &Identity, refresh_cookies: bool) -> Result<Self, LinkedinError> {
@@ -121,7 +121,7 @@ impl Linkedin {
     /// Returns a LinkedIn profile's contact information by URN ID.
     pub async fn get_profile_contact_info_by_urn(
         &self,
-        urn_id: &str,
+        urn_id: &UniformResourceName,
     ) -> Result<ContactInfo, LinkedinError> {
         self.inner
             .get_profile_contact_info(None, Some(urn_id))
