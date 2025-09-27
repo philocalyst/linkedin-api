@@ -285,3 +285,38 @@ pub(crate) struct UniformResourceName {
     pub(crate) namespace: String, // the context of the id
     pub(crate) id: String,
 }
+impl Profile {
+    /// Helper method to get full name
+    fn get_full_name(&self) -> Option<String> {
+        match (&self.first_name, &self.last_name) {
+            (Some(first), Some(last)) => Some(format!("{} {}", first, last)),
+            (Some(first), None) => Some(first.clone()),
+            (None, Some(last)) => Some(last.clone()),
+            (None, None) => None,
+        }
+    }
+
+    /// Helper method to get profile image URL
+    fn get_profile_image(&self) -> Option<Url> {
+        self.profile_picture_original_image
+            .as_ref()
+            .and_then(|container| container.vector_image.as_ref())
+            .and_then(|vector_image| {
+                if let (Some(root_url), Some(artifact)) =
+                    (&vector_image.root_url, vector_image.artifacts.first())
+                {
+                    let full_url = format!(
+                        "{}{}",
+                        root_url,
+                        artifact
+                            .file_identifying_url_path_segment
+                            .as_deref()
+                            .unwrap_or("")
+                    );
+                    Url::parse(&full_url).ok()
+                } else {
+                    None
+                }
+            })
+    }
+}
