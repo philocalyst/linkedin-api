@@ -411,8 +411,8 @@ pub struct Education {
     pub description: Option<String>,
     pub grade: Option<String>,
     pub time_period: Option<TimePeriod>,
-    pub honors: Vec<String>,
-    pub test_scores: Vec<String>,
+    pub honors: Option<Vec<String>>,
+    pub test_scores: Option<Vec<String>>,
 }
 
 impl Education {
@@ -727,7 +727,7 @@ pub struct ImageArtifact {
 
 #[derive(Debug, PartialEq, Serialize, Clone, Deserialize)]
 pub struct TimePeriod {
-    pub start_date: YearMonth,
+    pub start_date: Option<YearMonth>,
     pub end_date: Option<YearMonth>,
 }
 
