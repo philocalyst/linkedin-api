@@ -1,5 +1,6 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
+use time::Month;
 use url::Url;
 
 pub struct Identity {
@@ -190,7 +191,60 @@ pub struct Experience {
     pub company_name: Option<String>,
     #[serde(rename = "companyLogoUrl")]
     pub company_logo_url: Option<String>,
+    pub role: Option<String>,
+    #[serde(rename = "timePeriod")]
+    pub time_period: Option<TimePeriod>,
     pub description: Option<String>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Clone, Deserialize)]
+pub struct TimePeriod {
+    #[serde(rename = "startDate")]
+    pub start_date: YearMonth,
+    #[serde(rename = "endDate")]
+    pub end_date: YearMonth,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct YearMonth {
+    pub year: i32,
+    pub month: Month,
+}
+
+impl Serialize for YearMonth {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use serde::ser::SerializeStruct;
+
+        let mut s = serializer.serialize_struct("YearMonth", 2)?;
+        s.serialize_field("year", &self.year)?;
+        s.serialize_field("month", &(self.month as u8))?;
+        s.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for YearMonth {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Raw {
+            year: i32,
+            month: u8,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+        let month = Month::try_from(raw.month)
+            .map_err(|_| serde::de::Error::custom("invalid month value"))?;
+
+        Ok(YearMonth {
+            year: raw.year,
+            month,
+        })
+    }
 }
 
 /// An education entry
