@@ -10,7 +10,7 @@ use url::Url;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Locale {
     pub country: Country,
-    pub language: Language,
+    pub language: isolang::Language,
 }
 
 pub struct Identity {
