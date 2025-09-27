@@ -17,6 +17,7 @@ cookie_store = "0.21"
 url = "2.5"
 rand = "0.8"
 urlencoding = "2.1"
+time = { version = "0.3.44", features = ["serde"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["test-util", "macros"] }
