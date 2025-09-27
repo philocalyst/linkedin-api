@@ -203,6 +203,28 @@ pub struct BirthDate {
     pub year: Option<u16>,
 }
 
+impl FromStr for BirthDate {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split('-').collect();
+
+        match parts.len() {
+            3 => {
+                let year = parts[0].parse::<u16>().ok();
+                let month = parts[1]
+                    .parse::<u8>()
+                    .ok()
+                    .and_then(|m| Month::try_from(m).ok()); // assuming Month has try_from
+                let day = parts[2].parse::<u8>().ok();
+
+                Ok(BirthDate { day, month, year })
+            }
+            _ => Err(format!("Invalid date format: {}", s)),
+        }
+    }
+}
+
 impl BirthDate {
     /// Get as a proper date if all fields are present
     pub fn as_date(&self) -> Option<time::Date> {
