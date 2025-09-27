@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-09-26
+### Fixed
+- The visibility on internal methods
+
 ## [0.2.0] - 2025-09-26
 
 ### Added
@@ -25,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added 
 - Implemented `PartialEq` for profile-related data structures to allow for direct comparison.
 
-[Unreleased]: https://github.com/philocalyst/infat/compare/v0.2.0…HEAD
-[0.1.0]: https://github.com/philocalyst/infat/compare/v0.1.0...v0.2.0 
+[Unreleased]: https://github.com/philocalyst/infat/compare/v0.2.1…HEAD
+[0.2.1]: https://github.com/philocalyst/infat/compare/v0.2.0...v0.2.1 
+[0.2.0]: https://github.com/philocalyst/infat/compare/v0.1.0...v0.2.0 
 [0.1.0]: https://github.com/philocalyst/infat/compare/v0.1.0... (Comparing against the start of the project)
