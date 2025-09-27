@@ -83,6 +83,9 @@ pub struct Profile {
 
     #[serde(skip)]
     pub skills: Vec<Skill>,
+
+    #[serde(skip)]
+    pub contact: ContactInfo,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -263,7 +266,7 @@ pub struct Skill {
     pub name: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq, Clone, Serialize, Deserialize)]
 pub struct ContactInfo {
     #[serde(rename = "emailAddress")]
     pub email_address: Option<String>,
@@ -275,7 +278,7 @@ pub struct ContactInfo {
     pub ims: Option<Vec<Value>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Website {
     pub url: String,
     pub label: Option<String>,
@@ -336,9 +339,9 @@ pub struct Invitation {
     pub shared_secret: String,
 }
 
-pub(crate) struct UniformResourceName {
-    pub(crate) namespace: String, // the context of the id
-    pub(crate) id: String,
+pub struct UniformResourceName {
+    pub namespace: String, // the context of the id
+    pub id: String,
 }
 impl Profile {
     /// Helper method to get full name
