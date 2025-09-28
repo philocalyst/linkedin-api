@@ -58,33 +58,30 @@ impl LinkedinInner {
         let data: serde_json::Value = res.json().await?;
 
         let mut profile_view: ProfileView = serde_json::from_value(data)?;
-        let mut profile = profile_view.profile.clone();
 
         // Derive helper fields not serialized directly
-        if let Some(mini) = &profile.mini_profile {
+        if let Some(mini) = &profile_view.profile.mini_profile {
             if let Some(urn_str) = mini.entity_urn.as_deref() {
                 if let Ok(urn) = UniformResourceName::parse(urn_str) {
-                    profile.profile_id = urn.id;
+                    profile_view.profile.profile_id = urn.id;
                 }
             }
         }
 
         // Fill in profile_id
-        if let Some(mini) = &profile.mini_profile {
+        if let Some(mini) = &profile_view.profile.mini_profile {
             if let Some(urn_str) = mini.entity_urn.as_deref() {
                 if let Ok(urn) = UniformResourceName::parse(urn_str) {
-                    profile.profile_id = urn.id;
+                    profile_view.profile.profile_id = urn.id;
                 }
             }
         }
 
         // Fill in skills (separate endpoint)
-        profile.skills = self.get_profile_skills(public_id, urn).await?;
+        profile_view.skills = self.get_profile_skills(public_id, urn).await?;
 
         // Fill in contact info (separate endpoint)
-        profile.contact = self.get_profile_contact_info(public_id, urn).await?;
-
-        profile_view.profile = profile;
+        profile_view.profile.contact = self.get_profile_contact_info(public_id, urn).await?;
 
         Ok(profile_view)
     }
