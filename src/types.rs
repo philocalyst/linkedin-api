@@ -23,7 +23,7 @@ pub struct Identity {
 /// The complete LinkedIn profile view structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LinkedInProfileView {
+pub struct ProfileView {
     pub certification_view: CertificationView,
     pub course_view: CourseView,
     pub education_view: EducationView,
@@ -44,6 +44,8 @@ pub struct LinkedInProfileView {
     pub test_score_view: TestScoreView,
     pub volunteer_cause_view: VolunteerCauseView,
     pub volunteer_experience_view: VolunteerExperienceView,
+    #[serde(skip)]
+    pub skills: Vec<Skill>,
 }
 
 /// Strongly-typed name structure
@@ -135,15 +137,6 @@ pub struct Profile {
 
     #[serde(skip)]
     pub profile_id: String,
-
-    #[serde(skip)]
-    pub experience: Vec<Experience>,
-
-    #[serde(skip)]
-    pub education: Vec<Education>,
-
-    #[serde(skip)]
-    pub skills: Vec<Skill>,
 
     #[serde(skip)]
     pub contact: ContactInfo,
