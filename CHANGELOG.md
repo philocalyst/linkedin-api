@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-09-27
+
+### Added
+- Added back wrapper types for NetworkInfo, School, Company, Conversation, ConversationDetails, and SearchPeopleParams.
+- Implemented `FromStr` for `BirthDate`.
+- Added important typing crates: `aho-corasick`, `anyhow`, `bincode`, `colored`, `csv`, `csv-core`, `either`, `email_address`, `heck`, `isolang`, `linked-hash-map`, `lru-cache`, `minimal-lexical`, `my_country`, `nom`, `oncemutex`, `phf`, `phf_shared`, `phonenumber`, `prettyplease`, `quick-xml`, `regex`, `regex-automata`, `regex-cache`, `regex-syntax`, `same-file`, `serde_yaml`, `siphasher`, `strum`, `strum_macros`, `thiserror`.
+- Added `.cookies.json` for cookie management.
+
+### Changed
+- Made several fields in `Education` and `TimePeriod` optional.
+- Made the core library type-aware by using strongly typed fields like `EmailAddress`, `BirthDate`, `Url`, and `PhoneNumber`.
+- Fixed the naming scheme by removing `#[serde(rename = "entityUrn")]` and similar attributes from many fields.
+- Introduced a new approach to typing, refactoring `types.rs` with new structs for `LinkedInProfileView`, `PersonName`, `Address`, `GeoLocation`, `BirthDate`, `Paging`, `CertificationView`, `Certification`, `CourseView`, `Course`, `HonorView`, `Honor`, `LanguageView`, `Language`, `LanguageProficiency`, `Experience`, `CompanyInfo`, `EmployeeCountRange`, `MiniCompany`, `Education`, `SchoolInfo`, `TestScoreView`, `TestScore`, `ContactInfo`, `Website`, `PositionGroupView`, `PositionGroup`, `PositionView`, `EducationView`, `SkillView`, `Skill`, `VolunteerExperienceView`, `VolunteerExperience`, `VolunteerCauseView`, `VolunteerCause`, `OrganizationView`, `PatentView`, `ProjectView`, `PublicationView`.
+- Added back skipped fields and moved back towards the naming scheme in `Profile` and `ContactInfo`.
+
+### Removed
+- Removed all time period "convenience" methods (`duration_months`, `duration_string`).
+
+### Fixed
+- Fixed the language typing on `Locale` from `Language` to `isolang::Language`.
+
 ## [0.3.0] – 2025-09-26
 
 ### Added
@@ -45,7 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added 
 - Implemented `PartialEq` for profile-related data structures to allow for direct comparison.
 
-[Unreleased]: https://github.com/philocalyst/linkedin-api/compare/v0.3.0…HEAD
+[Unreleased]: https://github.com/your-org/your-repo/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/your-org/your-repo/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/philocalyst/linkedin-api/compare/v0.2.1...v0.3.0 
 [0.2.1]: https://github.com/philocalyst/linkedin-api/compare/v0.2.0...v0.2.1 
 [0.2.0]: https://github.com/philocalyst/linkedin-api/compare/v0.1.0...v0.2.0 
