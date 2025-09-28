@@ -25,7 +25,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 pub use crate::error::LinkedinError;
-use crate::types::SearchPeopleParams;
+use crate::types::{ProfileView, SearchPeopleParams};
 use crate::{
     linkedin::LinkedinInner,
     types::{
@@ -88,7 +88,7 @@ impl Linkedin {
     }
 
     /// Returns a LinkedIn profile.
-    pub async fn get_profile(&self, public_id: &str) -> Result<Profile, LinkedinError> {
+    pub async fn get_profile(&self, public_id: &str) -> Result<ProfileView, LinkedinError> {
         self.inner.get_profile(Some(public_id), None).await
     }
 
@@ -96,7 +96,7 @@ impl Linkedin {
     pub async fn get_profile_by_urn(
         &self,
         urn: &UniformResourceName,
-    ) -> Result<Profile, LinkedinError> {
+    ) -> Result<ProfileView, LinkedinError> {
         self.inner.get_profile(None, Some(urn)).await
     }
 

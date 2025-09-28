@@ -6,6 +6,7 @@ use urlencoding::encode;
 
 use crate::client::Client;
 use crate::error::LinkedinError;
+use crate::types::ProfileView;
 use crate::{
     types::Education, types::Experience, Company, Connection, ContactInfo, Conversation,
     ConversationDetails, Identity, Invitation, MemberBadges, NetworkInfo, PersonSearchResult,
@@ -32,7 +33,7 @@ impl LinkedinInner {
         &self,
         public_id: Option<&str>,
         urn: Option<&UniformResourceName>,
-    ) -> Result<Profile, LinkedinError> {
+    ) -> Result<ProfileView, LinkedinError> {
         let id = if let Some(pid) = public_id {
             pid.to_string()
         } else if let Some(urn) = urn {
@@ -56,12 +57,8 @@ impl LinkedinInner {
 
         let data: serde_json::Value = res.json().await?;
 
-        let profile_val = data
-            .get("profile")
-            .ok_or_else(|| LinkedinError::RequestFailed("No 'profile' key".into()))?
-            .clone();
-
-        let mut profile: Profile = serde_json::from_value(profile_val)?;
+        let mut profile_view: ProfileView = serde_json::from_value(data)?;
+        let mut profile = profile_view.profile.clone();
 
         // Derive helper fields not serialized directly
         if let Some(mini) = &profile.mini_profile {
@@ -81,25 +78,15 @@ impl LinkedinInner {
             }
         }
 
-        // fill in experience
-        if let Some(positions) = data.get("positionView").and_then(|v| v.get("elements")) {
-            let exps: Vec<Experience> = serde_json::from_value(positions.clone())?;
-            profile.experience = exps;
-        }
-
-        // fill in education
-        if let Some(eds) = data.get("educationView").and_then(|v| v.get("elements")) {
-            let eds: Vec<Education> = serde_json::from_value(eds.clone())?;
-            profile.education = eds;
-        }
-
         // Fill in skills (separate endpoint)
         profile.skills = self.get_profile_skills(public_id, urn).await?;
 
         // Fill in contact info (separate endpoint)
         profile.contact = self.get_profile_contact_info(public_id, urn).await?;
 
-        Ok(profile)
+        profile_view.profile = profile;
+
+        Ok(profile_view)
     }
 
     pub async fn get_profile_contact_info(
