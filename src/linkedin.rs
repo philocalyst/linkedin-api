@@ -211,7 +211,7 @@ impl LinkedinInner {
             for element in elements {
                 if let Some(name) = element.get("name").and_then(|n| n.as_str()) {
                     skills.push(Skill {
-                        entity_urn: "".to_string(),
+                        entity_urn: None,
                         name: name.to_string(),
                     });
                 }
@@ -749,7 +749,7 @@ impl LinkedinInner {
                         invitation.get("sharedSecret").and_then(|s| s.as_str()),
                     ) {
                         invitations.push(Invitation {
-                            entity_urn: entity_urn.to_string(),
+                            entity_urn: Some(entity_urn.to_string()),
                             shared_secret: shared_secret.to_string(),
                         });
                     }
