@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] – 2025-09-27
+
+### Added
+- Introduced strongly‑typed `ProjectView`, with new `Project` and `ProjectMember`
+  structs replacing untyped `Value`.  
+  This includes support for project metadata such as entity URN, title,
+  description, members, and time period.
+
+### Changed
+- Updated `get_profile` API to return `ProfileView` instead of `Profile`,
+  ensuring full compatibility with LinkedIn’s actual response structure.
+- Derived helper fields (`profile_id`, contact info, and skills) now populate
+  correctly inside `ProfileView.profile`.
+- All LinkedIn `entity_urn` fields were relaxed from `String` to `Option<String>`
+  to better handle LinkedIn’s inconsistent payloads.
+- Adjusted `Language` typing: `proficiency` is now optional.
+
 ## [0.3.1] - 2025-09-27
 
 ### Added
@@ -66,8 +83,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added 
 - Implemented `PartialEq` for profile-related data structures to allow for direct comparison.
 
-[Unreleased]: https://github.com/your-org/your-repo/compare/v0.3.1...HEAD
-[0.3.1]: https://github.com/your-org/your-repo/compare/v0.3.0...v0.3.1
+[Unreleased]: https://github.com/philocalyst/linkedin-api/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/philocalyst/linkedin-api/compare/v0.3.1...v0.5.0
+[0.3.1]: https://github.com/philocalyst/linkedin-api/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/philocalyst/linkedin-api/compare/v0.2.1...v0.3.0 
 [0.2.1]: https://github.com/philocalyst/linkedin-api/compare/v0.2.0...v0.2.1 
 [0.2.0]: https://github.com/philocalyst/linkedin-api/compare/v0.1.0...v0.2.0 
