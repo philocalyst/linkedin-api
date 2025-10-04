@@ -22,7 +22,7 @@ async fn test_get_profile() -> Result<(), LinkedinError> {
     let api = Linkedin::new(&identity, true).await?;
     let profile = api.get_profile(&profile_id).await?;
 
-    assert!(!profile.profile_id.is_empty());
+    assert!(!profile.profile.profile_id.is_empty());
     Ok(())
 }
 
@@ -40,7 +40,9 @@ async fn test_get_profile_contact_info() -> Result<(), LinkedinError> {
 async fn test_get_profile_connections() -> Result<(), LinkedinError> {
     let (identity, profile_id, _) = get_test_credentials();
     let api = Linkedin::new(&identity, false).await?;
-    let connections = api.get_profile_connections(&profile_id).await?;
+    let pv = api.get_profile(&profile_id).await?;
+    let urn_id = &pv.profile.profile_id; 
+    let connections = api.get_profile_connections(urn_id).await?;
 
     println!("Found {} connections", connections.len());
     Ok(())
